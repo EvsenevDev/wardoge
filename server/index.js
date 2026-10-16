@@ -50,7 +50,7 @@ const board=S=>S.units.map(u=>[u.t,u.name,u.kills,u.deaths,u.revs,u.bot?1:0]);
 function unitData(S,u){return [r1(u.x),r1(u.y),Math.round(u.ang*100)/100,Math.ceil(u.hp),u.t,u.down,u.dead,u.tank?S.tanks.indexOf(u.tank):-1,u.helmet?1:0,Math.ceil(u.armor),u.w,u.gren,u.med,u.rev,u.revived?1:0,u.bot?1:0,u.id]}
 setInterval(()=>{for(const r of rooms){const S=r.S;if(!S.running)continue;const feed=S.drainFeed(),zc=S.zoneCount();
  const tanks=S.tanks.map(k=>[r1(k.x),r1(k.y),Math.round(k.ang*100)/100,Math.ceil(k.hp),k.dead,k.driver?k.driver.id:-1]);
- const bullets=S.bullets.map(b=>[r1(b.x),r1(b.y),b.r,b.boom?1:0]),nades=S.nades.map(n=>[r1(n.x),r1(n.y),n.t]),booms=S.booms.map(b=>[r1(b.x),r1(b.y),b.r,b.l]);
+ const bullets=S.bullets.map(b=>[r1(b.x),r1(b.y),b.r,b.boom?1:0,r1(b.vx),r1(b.vy)]),nades=S.nades.map(n=>[r1(n.x),r1(n.y),n.t]),booms=S.booms.map(b=>[r1(b.x),r1(b.y),b.r,b.l]);
  const names=S.units.map(u=>u.name);const wallsJ=S.wallVer!==r.lastWallVer?S.walls.map(w=>[r1(w.x),r1(w.y),r1(w.w),r1(w.h),w.built==null?-1:w.built]):null;
  for(const c of wss.clients){const me=c.u;if(!me||c.room!==r||c.readyState!==1)continue;
   // fog of war on the server: enemies are only sent when this player can actually see them

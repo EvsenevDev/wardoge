@@ -216,6 +216,7 @@ function showBoard(on){$('board').style.display=on?'flex':'none';if(on)$('boardP
 // ---------- render ----------
 function seen(u){if(u.t==me.t)return true;if(me.dead)return false;const d=d2(u,me);if(d>VIS)return false;
  if(tick%6==u.id%6||u._sv===undefined)u._sv=los(me,u);return u._sv}
+const _hc={};function setH(id,h){if(_hc[id]!==h){_hc[id]=h;$(id).innerHTML=h}}
 function draw(){ZOOM=Math.max(.42,Math.min(.75,Math.min(W,H)/1000));const z=ZOOM;g.setTransform(z,0,0,z,W/2-me.x*z,H/2-me.y*z);
  const vx0=me.x-W/2/z,vy0=me.y-H/2/z,vx1=me.x+W/2/z,vy1=me.y+H/2/z;
  g.fillStyle='#4a5a3c';g.fillRect(0,0,MW,MH);g.strokeStyle='#ffffff0d';g.lineWidth=1;g.beginPath();for(let x=Math.max(0,vx0-vx0%100);x<Math.min(MW,vx1);x+=100){g.moveTo(x,vy0);g.lineTo(x,vy1)}for(let y=Math.max(0,vy0-vy0%100);y<Math.min(MH,vy1);y+=100){g.moveTo(vx0,y);g.lineTo(vx1,y)}g.stroke();
@@ -253,14 +254,14 @@ function draw(){ZOOM=Math.max(.42,Math.min(.75,Math.min(W,H)/1000));const z=ZOOM
  const left=Math.ceil((TICK-tick%TICK)/60),cnt=zoneCount();
  const mxc=Math.max(...cnt),lead=cnt.filter(v=>v==mxc).length==1&&mxc>0?cnt.indexOf(mxc):-1,prog=(tick%TICK)/TICK*100;
  const ztxt=mxc==0?'ZONE EMPTY':lead<0?'CONTESTED':TEAMS[lead].n.toUpperCase()+' LEADING';
- $('top').innerHTML=`<div class="s">${TEAMS.map((t,i)=>`<span style="color:${t.c}">${t.n} ${score[i]}</span>`).join('')}<span>/ ${WIN}</span></div>
+ setH('top',`<div class="s">${TEAMS.map((t,i)=>`<span style="color:${t.c}">${t.n} ${score[i]}</span>`).join('')}<span>/ ${WIN}</span></div>
  <div id="zb"><i style="width:${prog}%;background:${lead<0?'#8a8a8a':TEAMS[lead].c}"></i><span>${ztxt} &nbsp; ${TEAMS.map((t,i)=>`<b style="color:${t.c}">${cnt[i]}</b>`).join(' / ')}</span></div>
- <div class="t">Tab: scoreboard</div>`;
- $('squad').innerHTML='<b>Your team</b><br>'+units.filter(u=>u.t==me.t).map(u=>`<div style="display:flex;justify-content:space-between"><span>${u===me?'<b>'+u.name+'</b>':u.name}</span>${u.dead?'<span style="color:#999">Out '+(u.dead>0?Math.ceil(u.dead/60)+'s':'')+'</span>':u.down?'<span style="color:#ff6b6b">DOWN '+Math.ceil(u.down/60)+'s</span>':`<span style="color:${u.hp>50?'#4cd964':u.hp>25?'#ffcc00':'#ff6b6b'}">${Math.ceil(u.hp)} HP</span>`}</div>`).join('');
- $('feed').innerHTML=feed.map(f=>f.s).join('<br>');
+ <div class="t">Tab: scoreboard</div>`);
+ setH('squad','<b>Your team</b><br>'+units.filter(u=>u.t==me.t).map(u=>`<div style="display:flex;justify-content:space-between"><span>${u===me?'<b>'+u.name+'</b>':u.name}</span>${u.dead?'<span style="color:#999">Out '+(u.dead>0?Math.ceil(u.dead/60)+'s':'')+'</span>':u.down?'<span style="color:#ff6b6b">DOWN '+Math.ceil(u.down/60)+'s</span>':`<span style="color:${u.hp>50?'#4cd964':u.hp>25?'#ffcc00':'#ff6b6b'}">${Math.ceil(u.hp)} HP</span>`}</div>`).join(''));
+ setH('feed',feed.map(f=>f.s).join('<br>'));
  const where=inHZ(me)?'<b style="color:#ffb400">In the HOT ZONE (counts x2)</b>':inCZ(me)?'<b>In the Control Zone</b>':'Head to the Control Zone (white circle on the minimap)';
- $('hud').innerHTML=hudHTML(where);$('info').innerHTML=me.dead?'<b>Respawning...</b>':me.down?`<b style="color:#ff6b6b">You're down.</b> You can't move. A teammate has ${Math.ceil(me.down/60)}s to revive you. ${isTouch?'Tap Respawn now to give up':'Hold and release Space to respawn now'}.`:
- gearRow()+`Cash <b>$${prof.cash}</b> &nbsp; HP <b>${me.tank?Math.ceil(me.tank.hp)+' (tank)':Math.ceil(me.hp)}</b> &nbsp; Armor <b>${Math.ceil(me.armor)}</b>${me.helmet?' + helmet':''}<br>Weapon <b>${me.tank?'Tank cannon':WEAP[me.w].n}</b> &nbsp; Grenades <b>${me.gren}</b> &nbsp; Medkits <b>${me.med}</b> &nbsp; Kills <b>${me.kills}</b> ${me.tending?(me.tending.down?' &nbsp; Reviving...':' &nbsp; Healing...'):''}<br>${where}`;
+ setH('hud',hudHTML(where));setH('info',me.dead?'<b>Respawning...</b>':me.down?`<b style="color:#ff6b6b">You're down.</b> You can't move. A teammate has ${Math.ceil(me.down/60)}s to revive you. ${isTouch?'Tap Respawn now to give up':'Hold and release Space to respawn now'}.`:
+ gearRow()+`Cash <b>$${prof.cash}</b> &nbsp; HP <b>${me.tank?Math.ceil(me.tank.hp)+' (tank)':Math.ceil(me.hp)}</b> &nbsp; Armor <b>${Math.ceil(me.armor)}</b>${me.helmet?' + helmet':''}<br>Weapon <b>${me.tank?'Tank cannon':WEAP[me.w].n}</b> &nbsp; Grenades <b>${me.gren}</b> &nbsp; Medkits <b>${me.med}</b> &nbsp; Kills <b>${me.kills}</b> ${me.tending?(me.tending.down?' &nbsp; Reviving...':' &nbsp; Healing...'):''}<br>${where}`);
  if(me.dead>0&&tick%30==0)renderShop()}
 function hudHTML(where){if(me.dead)return '<b>Taken out. Pick your loadout and respawn.</b>';
  if(me.down)return `<b style="color:#ff6b6b">You're down.</b> You can't move. Revive window:<div class="bar"><i style="width:${me.down/DOWNT*100}%;background:#ff3b30"></i><span>${Math.ceil(me.down/60)}s</span></div><span class="muted">${isTouch?'Tap Respawn now to give up':'Hold and release Space to respawn now'}</span>`;
@@ -311,19 +312,32 @@ function netBegin(){const ws=new WebSocket(SERVER);NET={ws,zc:null,names:[],last
   netSnap(m)}}
 function netSnap(m){tick=m.tk;score=m.sc;NET.zc=m.zc;HZ={x:m.hz[0],y:m.hz[1],r:m.hz[2]};if(m.names)NET.names=m.names;
  if(m.w){walls=[];grid={};for(const [x,y,w,h,b] of m.w)addWall({x,y,w,h,built:b<0?null:b})}
- tanks=m.tn.map(([x,y,ang,hp,dead,dv])=>({x,y,ang,hp,dead,dv,driver:null}));
+ const ptk=tanks||[];tanks=m.tn.map(([x,y,ang,hp,dead,dv],i)=>{const o=ptk[i];return {x:o?o.x:x,y:o?o.y:y,sx:x,sy:y,px:o?o.x:x,py:o?o.y:y,ang,hp,dead,dv,driver:null}});
+ bullets=m.b.map(([x,y,r,boom,vx,vy])=>({x,y,r,boom,vx:vx||0,vy:vy||0}));nades=m.n.map(([x,y,t])=>({x,y,t}));booms=m.x.map(([x,y,r,l])=>({x,y,r,l}));NET.t0=performance.now();
  const prev={};if(units)for(const u of units)prev[u.id]=u;
  units=m.u.map(a=>{const u={x:a[0],y:a[1],ang:a[2],hp:a[3],t:a[4],down:a[5],dead:a[6],helmet:!!a[8],armor:a[9],w:a[10],gren:a[11],med:a[12],rev:a[13],revived:!!a[14],bot:!!a[15],id:a[16],cd:0};u.name=NET.names[u.id]||'';
-  const p=prev[u.id];if(p&&p._sv!==undefined)u._sv=p._sv;if(a[7]>=0&&tanks[a[7]]){u.tank=tanks[a[7]];tanks[a[7]].driver=u}return u});
+  const p=prev[u.id];u.sx=u.x;u.sy=u.y;if(p&&!p.dead&&!u.dead&&Math.hypot(p.x-u.x,p.y-u.y)<200){u.px=p.x;u.py=p.y;u.x=p.x;u.y=p.y}else{u.px=u.x;u.py=u.y}if(p&&p._sv!==undefined)u._sv=p._sv;if(a[7]>=0&&tanks[a[7]]){u.tank=tanks[a[7]];tanks[a[7]].driver=u}return u});
  for(const k of tanks)if(k.dv>=0&&!k.driver)k.dead=1; // enemy driver out of sight: hide the tank
- me=units.find(u=>u.id==NET.you)||me;if(!me)return;me.name=prof.name;me.kills=m.k;me.deaths=m.dth;me.revs=m.rv;me.earned=m.er;me.tending=m.td>=0?units.find(u=>u.id==m.td):null;
+ me=units.find(u=>u.id==NET.you)||me;if(!me)return;
+ // own player: keep the locally predicted position, gently corrected toward the server
+ if(NET.mx==null||me.dead||me.down||me.tank||Math.hypot(NET.mx-me.sx,NET.my-me.sy)>140){NET.mx=me.sx;NET.my=me.sy}
+ else{const ex=me.sx-NET.mx,ey=me.sy-NET.my;if(Math.hypot(ex,ey)>30){NET.mx+=ex*.2;NET.my+=ey*.2}}
+ me.x=me.px=me.sx=NET.mx;me.y=me.py=me.sy=NET.my;me.name=prof.name;me.kills=m.k;me.deaths=m.dth;me.revs=m.rv;me.earned=m.er;me.tending=m.td>=0?units.find(u=>u.id==m.td):null;
  if(prof.cash!==m.cash){prof.cash=m.cash;if(tick%120<4)save()}
  for(const s of m.f)log(s);for(const s of m.pl)log(s);
  if(me.dead){if($('shopOv').style.display!='flex')showShop();else if(tick%30<3)renderShop()}}
-function netStep(){feed.forEach(f=>f.l--);feed=feed.filter(f=>f.l>0);const now=performance.now();if(now-NET.last<33)return;NET.last=now;
- let dx=(keys.d?1:0)-(keys.a?1:0)+joy.L.x,dy=(keys.s?1:0)-(keys.w?1:0)+joy.L.y,ang=me.ang,fire=false;
+function netStep(){feed.forEach(f=>f.l--);feed=feed.filter(f=>f.l>0);const now=performance.now(),fr=Math.min(4,(now-(NET.lf||now))/16.67);NET.lf=now;
+ let dx=(keys.d?1:0)-(keys.a?1:0)+joy.L.x,dy=(keys.s?1:0)-(keys.w?1:0)+joy.L.y,ang=me.ang,fire=false,spr=keys.shift||joy.sprint;
  if(joy.R.on){if(Math.hypot(joy.R.x,joy.R.y)>.2)ang=Math.atan2(joy.R.y,joy.R.x);fire=Math.hypot(joy.R.x,joy.R.y)>.55}else if(!isTouch)ang=Math.atan2(mouse.y-H/2,mouse.x-W/2);if(mouse.down&&!isTouch)fire=true;
- me.ang=ang;netA({i:[dx,dy,keys.shift||joy.sprint?1:0,Math.round(ang*1000)/1000,fire?1:0,keys.f?1:0]})}
+ me.ang=ang;
+ // predict own movement right away (same rules as the server)
+ const d=Math.hypot(dx,dy);if(d&&!me.dead&&!me.down&&!me.tank&&NET.mx!=null){const sp=(spr?1.7:1.15)*fr,mx=dx/d*sp,my=dy/d*sp;if(!hitWall(NET.mx+mx,NET.my,14))NET.mx+=mx;if(!hitWall(NET.mx,NET.my+my,14))NET.my+=my;me.x=NET.mx;me.y=NET.my}
+ // smooth everyone else between server updates
+ const a=Math.min(1,(now-(NET.t0||now))/50);for(const u of units)if(u!==me&&u.sx!=null){u.x=u.px+(u.sx-u.px)*a;u.y=u.py+(u.sy-u.py)*a}
+ for(const k of tanks){k.x=k.px+(k.sx-k.px)*a;k.y=k.py+(k.sy-k.py)*a;if(k.driver===me){me.x=k.x;me.y=k.y}}
+ for(const b of bullets){b.x+=b.vx*fr;b.y+=b.vy*fr}
+ if(now-NET.last<33)return;NET.last=now;
+ netA({i:[dx,dy,spr?1:0,Math.round(ang*1000)/1000,fire?1:0,keys.f?1:0]})}
 function netEnd(m){const w=m.end,won=w==me.t,s=m.me||{};running=false;prof.cash=s.cash!=null?s.cash:prof.cash; // server already added the win bonus
 
  prof.matches++;prof.wins+=won?1:0;prof.kills+=s.k||0;prof.deaths+=s.d||0;prof.revives+=s.r||0;prof.xp+=(s.k||0)*50+(s.r||0)*80+(won?500:150);
