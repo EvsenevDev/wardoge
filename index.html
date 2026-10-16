@@ -35,6 +35,7 @@ input{font-size:16px;padding:6px 10px;border-radius:6px;border:0}.row{display:fl
 <div id="lobby" class="ov"><div class="panel" id="lobbyP"></div></div>
 <div id="shopOv" class="ov"><div class="panel" id="shopP"></div></div>
 <div id="board" class="ov" style="background:#000a"><div class="panel" id="boardP"></div></div>
+<script src="config.js"></script>
 <script>
 const c=document.getElementById('c'),g=c.getContext('2d');let W,H;function rs(){W=c.width=innerWidth;H=c.height=innerHeight}onresize=rs;rs();
 const $=id=>document.getElementById(id);
@@ -92,7 +93,7 @@ const BOTN=BOTN0;
 function equip(u,l){u.w=l.w;u.helmet=l.helmet;u.armor=l.armor?100:0;u.gren=l.gren?3:0;u.med=l.med?3:0}
 function spawn(u){const b=bases[u.t];u.x=b.x+(Math.random()-.5)*160;u.y=b.y+(Math.random()-.5)*160;u.hp=100;u.down=0;u.dead=0;u.tank=null;u.revived=false;u.rev=0;u.tgt=null;
  if(u.bot){const l={w:[0,0,1,2,3][Math.floor(Math.random()*5)],helmet:Math.random()<.5,armor:Math.random()<.4,gren:Math.random()<.5,med:Math.random()<.7};equip(u,l)}}
-function begin(){makeMap();units=[];score=[0,0,0];bullets=[];nades=[];booms=[];tick=0;feed=[];startCash=prof.cash;
+function begin(){if(SERVER)return netBegin();makeMap();units=[];score=[0,0,0];bullets=[];nades=[];booms=[];tick=0;feed=[];startCash=prof.cash;
  for(let t=0;t<3;t++)for(let i=0;i<PER;i++){const u={t,bot:!(t==myTeam&&i==0),ang:0,kills:0,deaths:0,revs:0,earned:0,name:BOTN[(t*PER+i)%BOTN.length]+((t*PER+i)>=BOTN.length?' '+(1+Math.floor((t*PER+i)/BOTN.length)):'')};spawn(u);units.push(u)}
  me=units.find(u=>!u.bot);me.name=prof.name;me.x=bases[myTeam].x;me.y=bases[myTeam].y;
  if(!buyLoadout(me)){equip(me,{w:0})}
@@ -101,12 +102,12 @@ function buyLoadout(u){const cost=loadCost(load);if(prof.cash<cost)return false;
 function inHZ(u){return Math.hypot(u.x-HZ.x,u.y-HZ.y)<HZ.r}function inCZ(u){return Math.hypot(u.x-CZ.x,u.y-CZ.y)<CZ.r}
 function pay(u,v,why){if(inHZ(u))v*=2;u.earned+=v;if(u===me){prof.cash+=v;if(why)log(`+$${v} ${why}`)}}
 function spend(u,v){if(u!==me)return true;if(prof.cash<v)return false;prof.cash-=v;return true}
-function toggleTank(u){if(u.tank){u.tank.driver=null;u.tank=null;u.x+=45;return}for(const k of tanks)if(!k.driver&&!k.dead&&d2(k,u)<75){k.driver=u;u.tank=k;return}}
-function buyTank(u){if(Math.hypot(u.x-bases[u.t].x,u.y-bases[u.t].y)>350){log('Tanks can only be bought at your base');return}if(!spend(u,600)){log('Not enough cash for a tank ($600)');return}tanks.push(mkTank(u.x+60,u.y));log('Tank delivered. Press E to get in')}
-function build(u,ang){if(u.tank)return;const x=u.x+Math.cos(ang)*60,y=u.y+Math.sin(ang)*60,vert=Math.abs(Math.cos(ang))>Math.abs(Math.sin(ang));const w=vert?24:90,h=vert?90:24;
+function toggleTank(u){if(NET&&u===me){netA({a:'e'});return}if(u.tank){u.tank.driver=null;u.tank=null;u.x+=45;return}for(const k of tanks)if(!k.driver&&!k.dead&&d2(k,u)<75){k.driver=u;u.tank=k;return}}
+function buyTank(u){if(NET&&u===me){netA({a:'t'});return}if(Math.hypot(u.x-bases[u.t].x,u.y-bases[u.t].y)>350){log('Tanks can only be bought at your base');return}if(!spend(u,600)){log('Not enough cash for a tank ($600)');return}tanks.push(mkTank(u.x+60,u.y));log('Tank delivered. Press E to get in')}
+function build(u,ang){if(NET&&u===me){netA({a:'q'});return}if(u.tank)return;const x=u.x+Math.cos(ang)*60,y=u.y+Math.sin(ang)*60,vert=Math.abs(Math.cos(ang))>Math.abs(Math.sin(ang));const w=vert?24:90,h=vert?90:24;
  const nw={x:x-w/2,y:y-h/2,w,h,hp:250,built:u.t};if(units.some(o=>!o.dead&&o.x+16>nw.x&&o.x-16<nw.x+w&&o.y+16>nw.y&&o.y-16<nw.y+h))return;if(!spend(u,25)){log('Need $25 to build');return}addWall(nw)}
-function medkit(u){if(u.hp>=100||u.med<=0){if(u===me&&u.med<=0)log('No medkits left');return}u.med--;u.hp=Math.min(100,u.hp+60);if(u===me)log('Used a medkit')}
-function throwNade(u,tx,ty){if(u.gren<=0||u.tank){if(u===me)log('No grenades');return}u.gren--;const a=Math.atan2(ty-u.y,tx-u.x),d=Math.min(420,Math.hypot(tx-u.x,ty-u.y));nades.push({x:u.x,y:u.y,vx:Math.cos(a)*d/62,vy:Math.sin(a)*d/62,t:0,o:u})}
+function medkit(u){if(NET&&u===me){netA({a:'h'});return}if(u.hp>=100||u.med<=0){if(u===me&&u.med<=0)log('No medkits left');return}u.med--;u.hp=Math.min(100,u.hp+60);if(u===me)log('Used a medkit')}
+function throwNade(u,tx,ty){if(NET&&u===me){netA({a:'g',tx,ty});return}if(u.gren<=0||u.tank){if(u===me)log('No grenades');return}u.gren--;const a=Math.atan2(ty-u.y,tx-u.x),d=Math.min(420,Math.hypot(tx-u.x,ty-u.y));nades.push({x:u.x,y:u.y,vx:Math.cos(a)*d/62,vy:Math.sin(a)*d/62,t:0,o:u})}
 function moveU(u,dx,dy,sprint){const k=u.tank;let sp=k?1.0:(sprint?1.7:1.15);const r=k?28:14;const d=Math.hypot(dx,dy);if(!d)return;dx=dx/d*sp;dy=dy/d*sp;
  const o=k||u;if(!hitWall(o.x+dx,o.y,r))o.x+=dx;if(!hitWall(o.x,o.y+dy,r))o.y+=dy;if(k){u.x=k.x;u.y=k.y;k.ang=Math.atan2(dy,dx)}}
 function shoot(u,ang){if(u.cd>0)return;
@@ -118,7 +119,7 @@ function damage(u,dm,by){if(u.dead||u.down)return; // downed players can't be hu
  u.hp-=dm;if(u.hp<=0){u.hp=0;if(by&&by.t!=u.t){by.kills++;pay(by,100,'enemy down')}
   if(u.revived){kill(u);if(u===me)log('You were taken out (already revived once this life)')}else{u.down=DOWNT;u.cd=0;if(u===me)log('You\'re down! Wait for a revive or hold Space to respawn')}}}
 function kill(u){u.down=0;u.dead=RESP;u.deaths++;if(u.tank){u.tank.driver=null;u.tank=null}if(u===me){showShop()}}
-function bleed(u){if(u.down)kill(u)}
+function bleed(u){if(NET&&u===me){netA({a:'giveup'});return}if(u.down)kill(u)}
 function explode(b){booms.push({x:b.x,y:b.y,r:b.boom,l:20});for(const u of units)if(!u.dead&&u.t!=b.o.t){const d=d2(u,b);if(d<b.boom)damage(u,b.dmg*(1-d/b.boom*.6),b.o)}
  for(const k of tanks)if(!k.dead&&!k.driver&&d2(k,b)<b.boom)k.hp-=b.dmg*.5;
  for(const w of walls.slice())if(w.hp&&Math.hypot(w.x+w.w/2-b.x,w.y+w.h/2-b.y)<b.boom+40){w.hp-=b.dmg*2;if(w.hp<=0)delWall(w)}}
@@ -159,7 +160,7 @@ function step(){if(!running)return;tick++;
   if(mx>0&&ws.length==1){score[ws[0]]++;log(`${TEAMS[ws[0]].n} held the zone (${cnt.join(' / ')}) +1 point`);for(const u of units)if(u.t==ws[0]&&!u.dead&&!u.down&&inCZ(u))pay(u,50,'zone held')}
   else log(mx?'Tie in the zone, no point':'Zone empty, no point');save()}
  const w=score.findIndex(s=>s>=WIN);if(w>=0)endMatch(w)}
-function zoneCount(){const cnt=[0,0,0];for(const u of units)if(!u.dead&&!u.down&&inCZ(u))cnt[u.t]+=inHZ(u)?2:1;return cnt}
+function zoneCount(){if(NET&&NET.zc)return NET.zc;const cnt=[0,0,0];for(const u of units)if(!u.dead&&!u.down&&inCZ(u))cnt[u.t]+=inHZ(u)?2:1;return cnt}
 function endMatch(w){running=false;const won=w==me.t;if(won)pay(me,500,'');
  prof.matches++;prof.wins+=won?1:0;prof.kills+=me.kills;prof.deaths+=me.deaths;prof.revives+=me.revs;prof.xp+=me.kills*50+me.revs*80+(won?500:150);
  prof.history.unshift({d:new Date().toLocaleDateString(),won,team:TEAMS[w].n,k:me.kills,dth:me.deaths,r:me.revs,e:me.earned+(won?500:0)});prof.history=prof.history.slice(0,10);save();
@@ -183,7 +184,7 @@ function showLobby(top){lobbyTop=top||'';$('lobby').style.display='flex';
 function showShop(){$('shopOv').style.display='flex';renderShop()}
 function renderShop(){if(!me||!me.dead)return;const t=Math.ceil(me.dead/60);
  $('shopP').innerHTML=`<h2>You were taken out</h2>${shopHTML()}<button ${me.dead>0?'disabled':''} onclick="respawn()">${me.dead>0?'Respawn in '+t+'s':'Respawn (Enter)'}</button>`}
-function respawn(){if(me.dead>0)return;spawn(me);if(!buyLoadout(me)){equip(me,{w:0});log('Not enough cash for your loadout, spawned with a rifle')}$('shopOv').style.display='none';me.dead=0}
+function respawn(){if(me.dead>0)return;if(NET){netA({a:'respawn',load});$('shopOv').style.display='none';return}spawn(me);if(!buyLoadout(me)){equip(me,{w:0});log('Not enough cash for your loadout, spawned with a rifle')}$('shopOv').style.display='none';me.dead=0}
 function boardHTML(){return `<div class="row">${TEAMS.map((t,i)=>`<div style="flex:1;min-width:240px"><h3 style="color:${t.c}">${t.n} — ${score[i]} pts</h3><table><tr><th>Name</th><th>K</th><th>D</th><th>Rev</th><th>$</th></tr>${units.filter(u=>u.t==i).sort((a,b)=>b.kills-a.kills).map(u=>`<tr style="${u===me?'color:#ffd166;font-weight:bold':''}"><td>${u.name}</td><td>${u.kills}</td><td>${u.deaths}</td><td>${u.revs}</td><td>${u.earned}</td></tr>`).join('')}</table></div>`).join('')}</div>`}
 function showBoard(on){$('board').style.display=on?'flex':'none';if(on)$('boardP').innerHTML='<h2>Scoreboard</h2>'+boardHTML()}
 // ---------- render ----------
@@ -247,7 +248,7 @@ function hudHTML(where){if(me.dead)return '<b>Taken out. Pick your loadout and r
 function gearRow(){const it=(on,txt)=>`<span style="display:inline-block;padding:2px 8px;margin:0 4px 4px 0;border-radius:6px;background:${on?'#2f6b2f':'#5a2a2a'};font-size:12px">${on?'✔':'✖'} ${txt}</span>`;
  return `<div>${it(true,me.tank?'Tank':WEAP[me.w].n)}${it(me.helmet,'Helmet')}${it(me.armor>0,'Armor '+Math.ceil(me.armor))}${it(me.gren>0,'Grenades '+me.gren)}${it(me.med>0,'Medkits '+me.med)}</div>`}
 function bar(x,y,p,col){g.fillStyle='#0008';g.fillRect(x-16,y,32,4);g.fillStyle=col||(p>.5?'#4cd964':p>.25?'#ffcc00':'#ff3b30');g.fillRect(x-16,y,32*Math.max(0,Math.min(1,p)),4)}
-function loop(){if(units){step();draw()}requestAnimationFrame(loop)}
+function loop(){if(units&&me){if(NET)netStep();else step();draw()}requestAnimationFrame(loop)}
 // ---------- touch controls ----------
 const isTouch=('ontouchstart' in window)||(navigator.maxTouchPoints>0);const joy={L:{x:0,y:0,on:false},R:{x:0,y:0,on:false},sprint:false};
 if(isTouch){$('touch').classList.add('on');
@@ -265,5 +266,42 @@ if(isTouch){$('touch').classList.add('on');
  const hold=(id,on,off)=>{const el=$(id);el.addEventListener('touchstart',e=>{e.preventDefault();on();el.classList.add('act')},{passive:false});const f=()=>{off();el.classList.remove('act')};el.addEventListener('touchend',f);el.addEventListener('touchcancel',f)};
  hold('bF',()=>keys.f=true,()=>keys.f=false);hold('bB',()=>running&&showBoard(true),()=>running&&showBoard(false));
  setInterval(()=>{const v=running&&me;$('touch').style.display=v&&!me.dead?'block':'none';$('bX').style.display=v&&me.down?'flex':'none'},200)}
+
+// ---------- online multiplayer (WebSocket) ----------
+// Server URL comes from config.js (generated at deploy) or ?server=wss://... ; empty means offline play vs bots.
+const SERVER=new URLSearchParams(location.search).get('server')||window.WARDOGE_SERVER||'';
+let NET=null;
+function netA(m){if(NET&&NET.ws.readyState==1)NET.ws.send(JSON.stringify(m))}
+function netBegin(){const ws=new WebSocket(SERVER);NET={ws,zc:null,names:[],last:0};units=null;me=null;bullets=[];nades=[];booms=[];tanks=[];feed=[];score=[0,0,0];tick=0;startCash=prof.cash;
+ $('lobby').style.display='none';log('Connecting to server...');
+ ws.onopen=()=>netA({join:{name:prof.name,team:myTeam,cash:prof.cash,load}});
+ ws.onerror=()=>{};
+ ws.onclose=()=>{if(NET&&NET.ws===ws&&!NET.ended){NET=null;running=false;units=null;showLobby('<h2 style="color:#ff6b6b">Lost connection to the server</h2>')}};
+ ws.onmessage=e=>{const m=JSON.parse(e.data);
+  if(m.full){NET=null;ws.close();showLobby('<h2>Server is full, try again soon</h2>');return}
+  if(m.you!=null){NET.you=m.you;CZ=m.CZ;bases=m.bases;HZ={x:CZ.x,y:CZ.y,r:200};running=true;log('Deployed. Head for the Control Zone!');return}
+  if(m.end!=null){NET.ended=true;netEnd(m);return}
+  netSnap(m)}}
+function netSnap(m){tick=m.tk;score=m.sc;NET.zc=m.zc;HZ={x:m.hz[0],y:m.hz[1],r:m.hz[2]};if(m.names)NET.names=m.names;
+ if(m.w){walls=[];grid={};for(const [x,y,w,h,b] of m.w)addWall({x,y,w,h,built:b<0?null:b})}
+ tanks=m.tn.map(([x,y,ang,hp,dead,dv])=>({x,y,ang,hp,dead,dv,driver:null}));
+ const prev={};if(units)for(const u of units)prev[u.id]=u;
+ units=m.u.map(a=>{const u={x:a[0],y:a[1],ang:a[2],hp:a[3],t:a[4],down:a[5],dead:a[6],helmet:!!a[8],armor:a[9],w:a[10],gren:a[11],med:a[12],rev:a[13],revived:!!a[14],bot:!!a[15],id:a[16],cd:0};u.name=NET.names[u.id]||'';
+  const p=prev[u.id];if(p&&p._sv!==undefined)u._sv=p._sv;if(a[7]>=0&&tanks[a[7]]){u.tank=tanks[a[7]];tanks[a[7]].driver=u}return u});
+ for(const k of tanks)if(k.dv>=0&&!k.driver)k.dead=1; // enemy driver out of sight: hide the tank
+ me=units.find(u=>u.id==NET.you)||me;if(!me)return;me.name=prof.name;me.kills=m.k;me.deaths=m.dth;me.revs=m.rv;me.earned=m.er;me.tending=m.td>=0?units.find(u=>u.id==m.td):null;
+ if(prof.cash!==m.cash){prof.cash=m.cash;if(tick%120<4)save()}
+ for(const s of m.f)log(s);for(const s of m.pl)log(s);
+ if(me.dead){if($('shopOv').style.display!='flex')showShop();else if(tick%30<3)renderShop()}}
+function netStep(){feed.forEach(f=>f.l--);feed=feed.filter(f=>f.l>0);const now=performance.now();if(now-NET.last<33)return;NET.last=now;
+ let dx=(keys.d?1:0)-(keys.a?1:0)+joy.L.x,dy=(keys.s?1:0)-(keys.w?1:0)+joy.L.y,ang=me.ang,fire=false;
+ if(joy.R.on){if(Math.hypot(joy.R.x,joy.R.y)>.2)ang=Math.atan2(joy.R.y,joy.R.x);fire=Math.hypot(joy.R.x,joy.R.y)>.55}else if(!isTouch)ang=Math.atan2(mouse.y-H/2,mouse.x-W/2);if(mouse.down&&!isTouch)fire=true;
+ me.ang=ang;netA({i:[dx,dy,keys.shift||joy.sprint?1:0,Math.round(ang*1000)/1000,fire?1:0,keys.f?1:0]})}
+function netEnd(m){const w=m.end,won=w==me.t,s=m.me||{};running=false;prof.cash=s.cash!=null?s.cash+(won?500:0):prof.cash;
+ prof.matches++;prof.wins+=won?1:0;prof.kills+=s.k||0;prof.deaths+=s.d||0;prof.revives+=s.r||0;prof.xp+=(s.k||0)*50+(s.r||0)*80+(won?500:150);
+ prof.history.unshift({d:new Date().toLocaleDateString(),won,team:TEAMS[w].n,k:s.k||0,dth:s.d||0,r:s.r||0,e:(s.e||0)+(won?500:0)});prof.history=prof.history.slice(0,10);save();
+ const bd=`<div class="row">${TEAMS.map((t,i)=>`<div style="flex:1;min-width:240px"><h3 style="color:${t.c}">${t.n} — ${m.score[i]} pts</h3><table><tr><th>Name</th><th>K</th><th>D</th><th>Rev</th></tr>${m.board.filter(r=>r[0]==i).sort((a,b)=>b[2]-a[2]).map(r=>`<tr><td>${r[5]?'':'<b>'}${r[1]}${r[5]?' 🤖':'</b>'}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</table></div>`).join('')}</div>`;
+ try{NET.ws.close()}catch{}NET=null;units=null;me=null;$('shopOv').style.display='none';$('board').style.display='none';
+ showLobby(`<h2 style="color:${TEAMS[w].c}">${TEAMS[w].n} wins! ${won?'You won (+$500 bonus)':''}</h2>${bd}`)}
 startScreen();loop();
 </script></body></html>

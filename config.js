@@ -1,0 +1,1 @@
+window.WARDOGE_SERVER="";

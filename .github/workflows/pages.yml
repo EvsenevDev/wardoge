@@ -1,0 +1,24 @@
+name: Deploy client to GitHub Pages
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['server/**']
+  workflow_dispatch:
+permissions: {contents: read, pages: write, id-token: write}
+concurrency: {group: pages, cancel-in-progress: true}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: {name: github-pages, url: '${{ steps.d.outputs.page_url }}'}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build site
+        env: {WARDOGE_SERVER: '${{ vars.WARDOGE_SERVER }}'}
+        run: |
+          mkdir _site
+          cp -r index.html assets CNAME _site/
+          echo "window.WARDOGE_SERVER=\"${WARDOGE_SERVER}\";" > _site/config.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+      - id: d
+        uses: actions/deploy-pages@v4
