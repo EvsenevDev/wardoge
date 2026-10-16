@@ -52,7 +52,7 @@ input{font-size:16px;padding:6px 10px;border-radius:6px;border:0}.row{display:fl
 #lobby .item{background:#fff;color:#111;border:3px solid #000;border-radius:0}#lobby .item.sel{background:#ffd60a;box-shadow:4px 4px 0 #000}
 #lobby .price{color:#b8860b}#lobby td,#lobby th{border-bottom:2px solid #0003}
 @media (max-width:900px){#lobby .title{font-size:38px}}
-</style></head><body><noscript><h1>WarDOGE: free online multiplayer Doge team shooter</h1><p>WarDOGE is a free, open-source top-down shooter you play in your browser, in the style of agar.io. Pick Red, Blue or Green, hold the Hot Zone, and win as a team of 15. Turn on JavaScript to play.</p></noscript>
+</style><style>#social{position:fixed;top:14px;right:14px;display:flex;gap:10px;z-index:50}#social a,.xbtn{display:inline-flex;align-items:center;gap:8px;background:#111;color:#fff;text-decoration:none;font-weight:900;font-size:16px;padding:9px 14px;border:3px solid #000;box-shadow:4px 4px 0 #f5a623;transform:rotate(-1deg);cursor:pointer;font-family:inherit}#social a:hover,.xbtn:hover{transform:rotate(0) translate(-2px,-2px);box-shadow:6px 6px 0 #f5a623}#social .st{background:#f5a623;color:#111;padding:1px 8px;margin-left:2px}.xbtn{margin:6px 0 4px}</style></head><body><noscript><h1>WarDOGE: free online multiplayer Doge team shooter</h1><p>WarDOGE is a free, open-source top-down shooter you play in your browser, in the style of agar.io. Pick Red, Blue or Green, hold the Hot Zone, and win as a team of 15. Turn on JavaScript to play.</p></noscript>
 <canvas id="c"></canvas><div id="top"></div><div id="feed"></div><div id="squad" style="position:fixed;top:210px;right:12px;width:190px;font-size:12px;background:#0007;border-radius:8px;padding:6px 8px;line-height:1.5"></div><div id="info"></div><div id="hud"></div>
 <div id="touch"><div class="stick" id="sL"><i></i></div><div class="stick" id="sR"><i></i></div>
 <div class="tb" id="bG" style="right:170px;bottom:140px">Nade</div><div class="tb" id="bQ" style="right:236px;bottom:96px">Build</div>
@@ -60,7 +60,7 @@ input{font-size:16px;padding:6px 10px;border-radius:6px;border:0}.row{display:fl
 <div class="tb" id="bE" style="right:102px;bottom:170px">Tank</div><div class="tb" id="bT" style="right:36px;bottom:170px">Buy tank</div>
 <div class="tb" id="bS" style="left:170px;bottom:30px">Sprint</div><div class="tb" id="bB" style="left:12px;top:12px;width:48px;height:48px">Score</div>
 <div class="tb" id="bX" style="left:50%;transform:translateX(-50%);bottom:140px;width:110px;border-radius:12px;display:none">Respawn now</div></div>
-<div id="lobby" class="ov"><div class="panel" id="lobbyP"></div></div>
+<div id="lobby" class="ov"><div id="social"><a href="https://github.com/EvsenevDev/wardoge" target="_blank" rel="noopener" title="Star WarDOGE on GitHub"><svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>Star</span><span class="st" id="ghStars">★</span></a><a href="#" onclick="shareX();return false" title="Share WarDOGE on X"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span>Share</span></a></div><div class="panel" id="lobbyP"></div></div>
 <div id="shopOv" class="ov"><div class="panel" id="shopP"></div></div>
 <div id="board" class="ov" style="background:#000a"><div class="panel" id="boardP"></div></div>
 <script src="config.js"></script>
@@ -79,7 +79,7 @@ let accts=JSON.parse(localStorage.getItem('hzw_accts')||'{}'),who=null,prof=newP
 function hsh(t){let h=5381;for(const ch of t)h=((h<<5)+h+ch.charCodeAt(0))|0;return 'h'+(h>>>0).toString(36)}
 function save(){if(!who||who==='sb')return; // signed-in accounts are saved by the server
 accts[who].prof=prof;localStorage.setItem('hzw_accts',JSON.stringify(accts))}
-const LOGO='<img class="logo" src="assets/logo.png" alt="WarDOGE"><h1 class="title">WarDOGE</h1><div class="tag">much war. very hot zone. wow.</div>';
+const LOGO='<img class="logo" src="assets/logo-clear.png" alt="WarDOGE"><h1 class="title">WarDOGE</h1><div class="tag">much war. very hot zone. wow.</div>';
 function startScreen(err){$('lobby').style.display='flex';const v=id=>($(id)||{}).value||'';
  $('lobbyP').innerHTML=`${LOGO}<div class="row" style="align-items:flex-start">
  <div style="flex:1;min-width:260px"><h3>Quick play</h3><input id="gname" placeholder="Your name" maxlength="14"><br><button onclick="guest()">Play as guest</button><div class="muted" style="margin-top:6px">Guests start with $1,500 every time and nothing is saved.</div></div>
@@ -204,7 +204,7 @@ function zoneCount(){if(NET&&NET.zc)return NET.zc;const cnt=[0,0,0];for(const u 
 function endMatch(w){running=false;const won=w==me.t;if(won)pay(me,500,'');
  prof.matches++;prof.wins+=won?1:0;prof.kills+=me.kills;prof.deaths+=me.deaths;prof.revives+=me.revs;prof.xp+=me.kills*50+me.revs*80+(won?500:150);
  prof.history.unshift({d:new Date().toLocaleDateString(),won,team:TEAMS[w].n,k:me.kills,dth:me.deaths,r:me.revs,e:me.earned+(won?500:0)});prof.history=prof.history.slice(0,10);save();
- $('shopOv').style.display='none';$('board').style.display='none';showLobby(`<h2 style="color:${TEAMS[w].c}">${TEAMS[w].n} wins! ${won?'You won (+$500 bonus)':''}</h2>${boardHTML()}`)}
+ $('shopOv').style.display='none';$('board').style.display='none';showLobby(`<h2 style="color:${TEAMS[w].c}">${TEAMS[w].n} wins! ${won?'You won (+$500 bonus)':''}</h2>${resBtn(won,TEAMS[me.t].n,me.kills,me.deaths,me.revs)}${boardHTML()}`)}
 // ---------- UI: lobby, shop, scoreboard ----------
 function shopHTML(){const cost=loadCost(load);
  return `<h3>Loadout <span class="muted">(you lose your gear when you die and rebuy on respawn)</span></h3>
@@ -358,6 +358,13 @@ function netEnd(m){const w=m.end,won=w==me.t,s=m.me||{};running=false;prof.cash=
  prof.history.unshift({d:new Date().toLocaleDateString(),won,team:TEAMS[w].n,k:s.k||0,dth:s.d||0,r:s.r||0,e:(s.e||0)+(won?500:0)});prof.history=prof.history.slice(0,10);save();
  const bd=`<div class="row">${TEAMS.map((t,i)=>`<div style="flex:1;min-width:240px"><h3 style="color:${t.c}">${t.n} — ${m.score[i]} pts</h3><table><tr><th>Name</th><th>K</th><th>D</th><th>Rev</th></tr>${m.board.filter(r=>r[0]==i).sort((a,b)=>b[2]-a[2]).map(r=>`<tr><td>${r[5]?'':'<b>'}${r[1]}${r[5]?' 🤖':'</b>'}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</table></div>`).join('')}</div>`;
  try{NET.ws.close()}catch{}NET=null;units=null;me=null;$('shopOv').style.display='none';$('board').style.display='none';
- showLobby(`<h2 style="color:${TEAMS[w].c}">${TEAMS[w].n} wins! ${won?'You won (+$500 bonus)':''}</h2>${bd}`)}
+ showLobby(`<h2 style="color:${TEAMS[w].c}">${TEAMS[w].n} wins! ${won?'You won (+$500 bonus)':''}</h2>${resBtn(won,TEAMS[me.t].n,s.k||0,s.d||0,s.r||0)}${bd}`)}
 sbInit().then(ok=>ok?showLobby():startScreen()).catch(()=>startScreen());loop();
+</script><script>
+const XSVG=`<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
+function xOpen(t){window.open('https://x.com/intent/post?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://wardoge.io'),'_blank','noopener,width=600,height=500')}
+function shareX(){xOpen('Playing WarDOGE 🐕⚔️ a free open-source .io shooter built with @grok. 3 teams of Doges fight for the Hot Zone. #Doge #iogame')}
+function shareRes(won,team,k,d,r){xOpen((won?'🏆 Won a match of WarDOGE with '+team+'!':'💀 '+team+' took the Hot Zone in WarDOGE, revenge loading...')+' '+k+' kills, '+d+' deaths, '+r+' revives. Can you beat that? 🐕 #WarDOGE #Doge')}
+function resBtn(won,team,k,d,r){return `<button class="xbtn" onclick="shareRes(${won},'${team}',${k},${d},${r})">${XSVG} Share result on X</button>`}
+fetch('https://api.github.com/repos/EvsenevDev/wardoge').then(r=>r.json()).then(j=>{if(j.stargazers_count!=null)document.getElementById('ghStars').textContent='★ '+j.stargazers_count}).catch(()=>{});
 </script></body></html>
