@@ -38,7 +38,7 @@ input{font-size:16px;padding:6px 10px;border-radius:6px;border:0}.row{display:fl
 <script>
 const c=document.getElementById('c'),g=c.getContext('2d');let W,H;function rs(){W=c.width=innerWidth;H=c.height=innerHeight}onresize=rs;rs();
 const $=id=>document.getElementById(id);
-let ZOOM=.75;const VIS=600,MW=7000,MH=7000,WIN=20,PER=8,TICK=1800,DOWNT=40*60,RESP=6*60;
+let ZOOM=.75;const VIS=600,MW=7000,MH=7000,WIN=20,PER=15,TICK=1800,DOWNT=40*60,RESP=6*60;
 const TEAMS=[{n:'Red',c:'#e74c3c'},{n:'Blue',c:'#3498db'},{n:'Green',c:'#2ecc71'}];
 const WEAP=[{n:'Rifle',p:0,cd:17,dmg:15,sp:5.6,k:1,spr:.04,life:106,r:3,rng:450},{n:'Shotgun',p:150,cd:66,dmg:12,sp:5.2,k:6,spr:.22,life:52,r:3,rng:220},
 {n:'Rocket launcher',p:400,cd:132,dmg:75,sp:4,k:1,spr:0,life:162,r:6,boom:100,rng:500},{n:'Sniper',p:350,cd:120,dmg:110,sp:10.4,k:1,spr:0,life:106,r:2,rng:950}];
@@ -86,13 +86,15 @@ function makeMap(){walls=[];grid={};seed(Math.floor(Math.random()*1e9));
   else if(rnd()<.5)addWall({x,y,w:40+rnd()*260,h:30});else addWall({x,y,w:30,h:40+rnd()*260})}
  tanks=[];for(let i=0;i<8;i++){let p;do p={x:400+rnd()*(MW-800),y:400+rnd()*(MH-800)};while(hitWall(p.x,p.y,40));tanks.push(mkTank(p.x,p.y))}}
 const mkTank=(x,y)=>({x,y,hp:500,ang:0,driver:null,dead:0});
-const BOTN=['Rex','Ace','Bolt','Fang','Ghost','Hawk','Jinx','Kilo','Lynx','Moose','Nova','Ozzy','Pike','Rook','Scout','Tank','Viper','Wolf','Yeti','Zed','Bear','Duke','Echo','Flint'];
+let myTeam=+(localStorage.getItem('hzw_team')||1)%3;
+const BOTN0=['Rex','Ace','Bolt','Fang','Ghost','Hawk','Jinx','Kilo','Lynx','Moose','Nova','Ozzy','Pike','Rook','Scout','Tank','Viper','Wolf','Yeti','Zed','Bear','Duke','Echo','Flint'];
+const BOTN=BOTN0;
 function equip(u,l){u.w=l.w;u.helmet=l.helmet;u.armor=l.armor?100:0;u.gren=l.gren?3:0;u.med=l.med?3:0}
 function spawn(u){const b=bases[u.t];u.x=b.x+(Math.random()-.5)*160;u.y=b.y+(Math.random()-.5)*160;u.hp=100;u.down=0;u.dead=0;u.tank=null;u.revived=false;u.rev=0;u.tgt=null;
  if(u.bot){const l={w:[0,0,1,2,3][Math.floor(Math.random()*5)],helmet:Math.random()<.5,armor:Math.random()<.4,gren:Math.random()<.5,med:Math.random()<.7};equip(u,l)}}
 function begin(){makeMap();units=[];score=[0,0,0];bullets=[];nades=[];booms=[];tick=0;feed=[];startCash=prof.cash;
- for(let t=0;t<3;t++)for(let i=0;i<PER;i++){const u={t,bot:!(t==1&&i==0),ang:0,kills:0,deaths:0,revs:0,earned:0,name:BOTN[t*PER+i]};spawn(u);units.push(u)}
- me=units.find(u=>!u.bot);me.name=prof.name;me.x=bases[1].x;me.y=bases[1].y;
+ for(let t=0;t<3;t++)for(let i=0;i<PER;i++){const u={t,bot:!(t==myTeam&&i==0),ang:0,kills:0,deaths:0,revs:0,earned:0,name:BOTN[(t*PER+i)%BOTN.length]+((t*PER+i)>=BOTN.length?' '+(1+Math.floor((t*PER+i)/BOTN.length)):'')};spawn(u);units.push(u)}
+ me=units.find(u=>!u.bot);me.name=prof.name;me.x=bases[myTeam].x;me.y=bases[myTeam].y;
  if(!buyLoadout(me)){equip(me,{w:0})}
  $('lobby').style.display='none';running=true;log('Deployed. Head for the Control Zone!')}
 function buyLoadout(u){const cost=loadCost(load);if(prof.cash<cost)return false;prof.cash-=cost;save();equip(u,load);return true}
@@ -164,16 +166,16 @@ function endMatch(w){running=false;const won=w==me.t;if(won)pay(me,500,'');
  $('shopOv').style.display='none';$('board').style.display='none';showLobby(`<h2 style="color:${TEAMS[w].c}">${TEAMS[w].n} wins! ${won?'You won (+$500 bonus)':''}</h2>${boardHTML()}`)}
 // ---------- UI: lobby, shop, scoreboard ----------
 function shopHTML(){const cost=loadCost(load);
- return `<h3>Loadout <span class="muted">(you lose your gear when you die, like WARDOGS, and rebuy on respawn)</span></h3>
+ return `<h3>Loadout <span class="muted">(you lose your gear when you die and rebuy on respawn)</span></h3>
  <div class="shop">${WEAP.map((w,i)=>`<div class="item ${load.w==i?'sel':''}" onclick="load.w=${i};redraw()"><b>${w.n}</b><span class="price">${w.p?'$'+w.p:'Free'}</span><br><span class="muted">${w.dmg*w.k} dmg</span></div>`).join('')}</div>
  <div class="shop">${Object.entries(GEAR).map(([k,v])=>`<div class="item ${load[k]?'sel':''}" onclick="load.${k}=!load.${k};redraw()"><b>${v.n}</b><span class="price">$${v.p}</span><br><span class="muted">${v.d}</span></div>`).join('')}</div>
  <div>Loadout cost: <b class="price">$${cost}</b> &nbsp; Your cash: <b class="price">$${prof.cash}</b> ${cost>prof.cash?'<span style="color:#ff6b6b">Not enough cash. You\'ll spawn with just the free rifle.</span>':''}</div>`}
 function redraw(){localStorage.setItem('hzw_load',JSON.stringify(load));if($('lobby').style.display=='flex')showLobby(lobbyTop);else renderShop()}
 let lobbyTop='';
 function showLobby(top){lobbyTop=top||'';$('lobby').style.display='flex';
- $('lobbyP').innerHTML=`${lobbyTop}<h1>WarDOGE</h1><div class="row"><div>${who?`Logged in as <b>${prof.name}</b> <a href="#" onclick="logout();return false" style="color:#ffd166">Log out</a>`:`Guest <b>${prof.name}</b> <span class="muted">(progress not saved)</span> <a href="#" onclick="startScreen();return false" style="color:#ffd166">Log in</a>`}</div>
+ $('lobbyP').innerHTML=`${lobbyTop}<img src="assets/logo.png" alt="WarDOGE" style="display:block;max-width:min(420px,90%);margin:0 auto 6px;border-radius:14px"><h1 style="text-align:center">WarDOGE</h1><div class="row"><div>${who?`Logged in as <b>${prof.name}</b> <a href="#" onclick="logout();return false" style="color:#ffd166">Log out</a>`:`Guest <b>${prof.name}</b> <span class="muted">(progress not saved)</span> <a href="#" onclick="startScreen();return false" style="color:#ffd166">Log in</a>`}</div>
  <div>Level <b>${level()}</b> <span class="muted">(${prof.xp%1000}/1000 XP)</span></div><div>Cash <b class="price">$${prof.cash}</b></div><div>Matches ${prof.matches} &nbsp; Wins ${prof.wins} &nbsp; Kills ${prof.kills} &nbsp; Revives ${prof.revives}</div></div>
- ${shopHTML()}<button onclick="begin()">Deploy (you're Blue)</button>
+ ${shopHTML()}<h3>Pick your team <span class="muted">(${PER} per team; bots fill empty slots, and each player who joins takes a bot's place)</span></h3><div class="shop">${TEAMS.map((t,i)=>`<div class="item ${myTeam==i?'sel':''}" style="border-color:${t.c}" onclick="myTeam=${i};localStorage.setItem('hzw_team',${i});redraw()"><b style="color:${t.c}">${t.n}</b><br><span class="muted">1 player, ${PER-1} bots</span></div>`).join('')}</div><button onclick="begin()">Deploy with ${TEAMS[myTeam].n}</button>
  <h3 style="margin-top:18px">Recent matches</h3>${prof.history.length?`<table><tr><th>Date</th><th>Result</th><th>Kills</th><th>Deaths</th><th>Revives</th><th>Earned</th></tr>${prof.history.map(h=>`<tr><td>${h.d}</td><td>${h.won?'Won':'Lost'} (${h.team} won)</td><td>${h.k}</td><td>${h.dth}</td><td>${h.r}</td><td>$${h.e}</td></tr>`).join('')}</table>`:'<div class="muted">No matches yet.</div>'}
  <h3>How to play</h3><div class="muted" style="line-height:1.6">Every 30 seconds the team with the most players in the big Control Zone scores 1 point; the small moving Hot Zone counts double and pays double cash. First to ${WIN} wins.<br>
  WASD move, Shift sprint, mouse aim and shoot. G grenade, Q build a wall ($25), H medkit, hold F on a teammate to heal (uses a medkit) or revive. E enter or leave a tank, T at base buys one ($600). Tab shows the scoreboard.<br>
