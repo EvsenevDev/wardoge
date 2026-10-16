@@ -1,0 +1,23 @@
+name: Deploy client to Cloudflare Pages
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['server/**']
+  workflow_dispatch:
+permissions: {contents: read, deployments: write}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build site
+        env: {WARDOGE_SERVER: '${{ vars.WARDOGE_SERVER }}'}
+        run: |
+          mkdir _site
+          cp -r index.html assets _site/
+          echo "window.WARDOGE_SERVER=\"${WARDOGE_SERVER}\";" > _site/config.js
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=wardoge --branch=main
