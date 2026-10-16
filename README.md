@@ -1,6 +1,6 @@
 # WarDOGE
 
-A free, meme-flavoured, top-down team shooter that runs in the browser. Play at [wardoge.ai](https://wardoge.ai).
+A free, meme-flavoured, top-down team shooter that runs in the browser. Play at [wardoge.io](https://wardoge.io).
 
 Three teams fight over a Control Zone. Every 30 seconds the team with the most players inside scores a point, and the moving Hot Zone counts double. First to 20 wins.
 

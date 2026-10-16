@@ -8,7 +8,7 @@ primary_region = 'sjc'
 
 [build]
 [env]
-  ALLOWED_ORIGINS = 'https://wardoge.ai,https://www.wardoge.ai'
+  ALLOWED_ORIGINS = 'https://wardoge.io,https://www.wardoge.io'
 
 [http_service]
   internal_port = 8080

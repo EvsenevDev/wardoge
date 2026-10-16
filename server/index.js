@@ -9,7 +9,7 @@ const MAX_ROOMS=+process.env.MAX_ROOMS||20;let nextRoom=1;const rooms=[];
 function newRoom(){const S=makeSim();S.newMatch();const r={id:nextRoom++,S,restartAt:0,lastWallVer:-1};rooms.push(r);return r}
 const humans=r=>r.S.units.filter(u=>!u.bot).length;
 const PORT=process.env.PORT||8080;
-const ORIGINS=(process.env.ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean); // e.g. https://wardoge.ai
+const ORIGINS=(process.env.ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean); // e.g. https://wardoge.io
 const r1=v=>Math.round(v*10)/10;
 const srv=http.createServer((q,s)=>{s.writeHead(200,{'content-type':'application/json','access-control-allow-origin':'*'});s.end(srvStatus())});
 const wss=new WebSocketServer({server:srv,maxPayload:4096,verifyClient:i=>!ORIGINS.length||ORIGINS.includes(i.origin)});
