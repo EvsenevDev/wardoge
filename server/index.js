@@ -1,6 +1,7 @@
 // WarDOGE multiplayer server. Config comes only from environment variables (no secrets in the repo).
 'use strict';
 const http=require('http');const fs=require('fs');const vm=require('vm');const {WebSocketServer}=require('ws');
+const DB=require('./db');
 const SIM_SRC=fs.readFileSync(__dirname+'/sim.js','utf8');
 // Each room is its own isolated copy of the match simulation.
 function makeSim(){const mod={exports:{}};vm.runInNewContext(SIM_SRC,{module:mod,exports:mod.exports,Math,JSON,console,isFinite,Number,String,Array,Object},{filename:'sim.js'});return mod.exports}
@@ -21,23 +22,29 @@ const srvStatus=()=>JSON.stringify({rooms:rooms.map(r=>({id:r.id,players:humans(
 wss.on('connection',ws=>{
  ws.u=null;ws.wv=-1;ws.rate=0;
  ws.on('message',buf=>{if(++ws.rate>120)return;let m;try{m=JSON.parse(buf)}catch{return}
-  if(m.join&&!ws.u){const j=m.join;let team=[0,1,2].includes(j.team)?j.team:1;const room=pickRoom(team);if(!room){ws.send(JSON.stringify({full:1}));return}const S=room.S;
-   let u=freeBot(S,team);if(!u){team=[0,1,2].sort((a,b)=>S.units.filter(x=>x.t==b&&x.bot).length-S.units.filter(x=>x.t==a&&x.bot).length)[0];u=freeBot(S,team)}
-   if(!u){ws.send(JSON.stringify({full:1}));return}
-   u.bot=false;u.ws=ws;u.name=String(j.name||'Player').replace(/[<>&"']/g,'').slice(0,16)||'Player';u.cash=Math.max(0,Math.min(1e6,j.cash|0));u.inp={};u.pl=[];
-   u.kills=u.deaths=u.revs=u.earned=0;const b=S.bases[u.t];u.x=b.x;u.y=b.y;u.hp=100;u.down=0;u.dead=0;u.tank&&(u.tank.driver=null,u.tank=null);S.buyFor(u,j.load);
-   ws.u=u;ws.room=room;ws.wv=-1;ws.send(JSON.stringify({you:u.id,team:u.t,room:room.id,CZ:S.CZ,bases:S.bases}));return}
+  if(m.join&&!ws.u&&!ws.joining){ws.joining=true;doJoin(ws,m.join).catch(e=>console.error(e)).finally(()=>ws.joining=false);return}
   const u=ws.u;if(!u)return;
   if(m.i){const [dx,dy,sp,ang,fire,f]=m.i;u.inp={dx:Math.max(-2,Math.min(2,+dx||0)),dy:Math.max(-2,Math.min(2,+dy||0)),sp:!!sp,ang:+ang||0,fire:!!fire,f:!!f}}
   else if(m.a)ws.room.S.action(u,m)});
- ws.on('close',()=>{const u=ws.u;if(u&&u.ws===ws){u.bot=true;u.ws=null;u.inp=null;if(u.dead<0)u.dead=1}})});
+ ws.on('close',()=>{const u=ws.u;if(u&&u.ws===ws){saveLeave(u);u.bot=true;u.ws=null;u.inp=null;if(u.dead<0)u.dead=1}})});
 let frame=0;
 setInterval(()=>{if(++frame%60==0)for(const c of wss.clients)c.rate=0;
  for(const r of rooms){const S=r.S;if(S.running){S.step();if(!S.running)onEnd(r)}else if(r.restartAt&&Date.now()>r.restartAt){r.restartAt=0;S.newMatch();r.lastWallVer=-1}}
  // close extra empty rooms, always keep one warm
  for(let i=rooms.length-1;i>0;i--)if(humans(rooms[i])==0&&![...wss.clients].some(c=>c.room===rooms[i]))rooms.splice(i,1)},1000/60);
-function onEnd(r){const S=r.S;for(const c of wss.clients){if(c.room!==r)continue;if(c.u)c.send(JSON.stringify({end:S.winner,score:S.score,board:board(S),me:stats(c.u)}));c.u=null;c.room=null}
+function saveLeave(u){if(!u.prof)return;const p=u.prof;p.cash=u.cash;p.kills+=u.kills;p.deaths+=u.deaths;p.revives+=u.revs;p.xp+=u.kills*50+u.revs*80;u.kills=u.deaths=u.revs=0;u.prof=null;DB.saveProfile(p)}
+function saveEnd(u,S){const won=u.t==S.winner;u.cash+=won?500:0;if(!u.prof)return;const p=u.prof;p.cash=u.cash;p.matches++;p.wins+=won?1:0;p.kills+=u.kills;p.deaths+=u.deaths;p.revives+=u.revs;p.xp+=u.kills*50+u.revs*80+(won?500:150);
+ p.history=[{d:new Date().toISOString().slice(0,10),won,team:S.TEAMS[S.winner].n,k:u.kills,dth:u.deaths,r:u.revs,e:u.earned+(won?500:0)},...(p.history||[])].slice(0,10);u.prof=null;DB.saveProfile(p)}
+function onEnd(r){const S=r.S;for(const c of wss.clients){if(c.room!==r)continue;if(c.u){saveEnd(c.u,S);}if(c.u)c.send(JSON.stringify({end:S.winner,score:S.score,board:board(S),me:stats(c.u)}));c.u=null;c.room=null}
  for(const u of S.units){u.bot=true;u.ws=null}r.restartAt=Date.now()+5000}
+async function doJoin(ws,j){let prof=null;if(j.token){const user=await DB.userFromToken(j.token);if(!user){ws.send(JSON.stringify({authfail:1}));return}prof=await DB.loadProfile(user);if(!prof){ws.send(JSON.stringify({authfail:1}));return}}
+ if(ws.readyState!==1)return;let team=[0,1,2].includes(j.team)?j.team:1;const room=pickRoom(team);if(!room){ws.send(JSON.stringify({full:1}));return}const S=room.S;
+   let u=freeBot(S,team);if(!u){team=[0,1,2].sort((a,b)=>S.units.filter(x=>x.t==b&&x.bot).length-S.units.filter(x=>x.t==a&&x.bot).length)[0];u=freeBot(S,team)}
+   if(!u){ws.send(JSON.stringify({full:1}));return}
+   u.bot=false;u.ws=ws;u.name=String(j.name||'Player').replace(/[<>&"']/g,'').slice(0,16)||'Player';u.prof=prof;u.cash=prof?prof.cash:Math.max(0,Math.min(5000,j.cash|0));if(prof)u.name=prof.name;u.inp={};u.pl=[];
+   u.kills=u.deaths=u.revs=u.earned=0;const b=S.bases[u.t];u.x=b.x;u.y=b.y;u.hp=100;u.down=0;u.dead=0;u.tank&&(u.tank.driver=null,u.tank=null);S.buyFor(u,j.load);
+   ws.u=u;ws.room=room;ws.wv=-1;ws.send(JSON.stringify({you:u.id,team:u.t,room:room.id,CZ:S.CZ,bases:S.bases,cash:u.cash,name:u.name}));}
+
 const stats=u=>({k:u.kills,d:u.deaths,r:u.revs,e:u.earned,cash:u.cash});
 const board=S=>S.units.map(u=>[u.t,u.name,u.kills,u.deaths,u.revs,u.bot?1:0]);
 function unitData(S,u){return [r1(u.x),r1(u.y),Math.round(u.ang*100)/100,Math.ceil(u.hp),u.t,u.down,u.dead,u.tank?S.tanks.indexOf(u.tank):-1,u.helmet?1:0,Math.ceil(u.armor),u.w,u.gren,u.med,u.rev,u.revived?1:0,u.bot?1:0,u.id]}

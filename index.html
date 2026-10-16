@@ -50,6 +50,7 @@ input{font-size:16px;padding:6px 10px;border-radius:6px;border:0}.row{display:fl
 <div id="shopOv" class="ov"><div class="panel" id="shopP"></div></div>
 <div id="board" class="ov" style="background:#000a"><div class="panel" id="boardP"></div></div>
 <script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const c=document.getElementById('c'),g=c.getContext('2d');let W,H;function rs(){W=c.width=innerWidth;H=c.height=innerHeight}onresize=rs;rs();
 const $=id=>document.getElementById(id);
@@ -62,20 +63,30 @@ const GEAR={helmet:{n:'Helmet',p:150,d:'Takes 20% less damage'},armor:{n:'Body a
 const newProf=n=>({name:n||'Player',cash:1500,xp:0,matches:0,wins:0,kills:0,deaths:0,revives:0,history:[]});
 let accts=JSON.parse(localStorage.getItem('hzw_accts')||'{}'),who=null,prof=newProf();
 function hsh(t){let h=5381;for(const ch of t)h=((h<<5)+h+ch.charCodeAt(0))|0;return 'h'+(h>>>0).toString(36)}
-function save(){if(!who)return;accts[who].prof=prof;localStorage.setItem('hzw_accts',JSON.stringify(accts))}
+function save(){if(!who||who==='sb')return; // signed-in accounts are saved by the server
+accts[who].prof=prof;localStorage.setItem('hzw_accts',JSON.stringify(accts))}
 const LOGO='<img class="logo" src="assets/logo.png" alt="WarDOGE"><h1 class="title">WarDOGE</h1><div class="tag">much war. very hot zone. wow.</div>';
 function startScreen(err){$('lobby').style.display='flex';const v=id=>($(id)||{}).value||'';
  $('lobbyP').innerHTML=`${LOGO}<div class="row" style="align-items:flex-start">
  <div style="flex:1;min-width:260px"><h3>Quick play</h3><input id="gname" placeholder="Your name" maxlength="14"><br><button onclick="guest()">Play as guest</button><div class="muted" style="margin-top:6px">Guests start with $1,500 every time and nothing is saved.</div></div>
- <div style="flex:1;min-width:260px"><h3>Log in to save progress</h3><input id="lu" placeholder="Username" maxlength="14"><br><input id="lp" type="password" placeholder="Password" style="margin-top:6px"><br>
+ ${SB?`<div style="flex:1;min-width:260px"><h3>Sign in to save progress</h3><button onclick="googleLogin()" style="background:#fff">Sign in with Google</button><div style="color:#c0392b;margin-top:6px">${err||''}</div><div class="muted" style="margin-top:6px">Your cash, level, stats and match history are saved to your account.</div></div></div>`:`<div style="flex:1;min-width:260px"><h3>Log in to save progress</h3><input id="lu" placeholder="Username" maxlength="14"><br><input id="lp" type="password" placeholder="Password" style="margin-top:6px"><br>
  <button onclick="login(false)">Log in</button> <button onclick="login(true)" style="background:#888">Create account</button>
- <div style="color:#ff6b6b;margin-top:6px">${err||''}</div><div class="muted" style="margin-top:6px">Your cash, level, stats and match history carry over between games.</div></div></div>`}
+ <div style="color:#ff6b6b;margin-top:6px">${err||''}</div><div class="muted" style="margin-top:6px">Your cash, level, stats and match history carry over between games.</div></div></div>`}`}
 function guest(){const n=($('gname').value||'').trim();if(!n){$('gname').style.outline='2px solid #ff6b6b';return}who=null;prof=newProf(n);showLobby()}
 function login(create){const u=($('lu').value||'').trim(),pw=$('lp').value||'';if(!u||!pw)return startScreen('Enter a username and password.');
  if(create){if(accts[u])return startScreen('That username is taken.');accts[u]={pw:hsh(pw),prof:newProf(u)}}
  else if(!accts[u]||accts[u].pw!==hsh(pw))return startScreen('Wrong username or password.');
  who=u;prof=accts[u].prof;save();showLobby()}
-function logout(){who=null;startScreen()}
+function logout(){if(who==='sb'&&SB)SB.auth.signOut();who=null;startScreen()}
+// ---------- Supabase sign-in (Google) ----------
+const SB=(window.WARDOGE_SUPABASE_URL&&window.WARDOGE_SUPABASE_ANON_KEY&&window.supabase)?window.supabase.createClient(window.WARDOGE_SUPABASE_URL,window.WARDOGE_SUPABASE_ANON_KEY):null;
+let sbToken=null;
+function googleLogin(){SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}})}
+async function sbProfile(session){sbToken=session.access_token;const {data}=await SB.from('profiles').select('*').eq('id',session.user.id).maybeSingle();
+ const md=session.user.user_metadata||{};const d=data||{name:(md.full_name||md.name||'Player').slice(0,14),cash:1500,xp:0,matches:0,wins:0,kills:0,deaths:0,revives:0,history:[]};
+ who='sb';prof={name:d.name,cash:d.cash,xp:d.xp,matches:d.matches,wins:d.wins,kills:d.kills,deaths:d.deaths,revives:d.revives,history:d.history||[]}}
+async function sbInit(){if(!SB)return false;const {data}=await SB.auth.getSession();if(!data.session)return false;await sbProfile(data.session);
+ SB.auth.onAuthStateChange((_e,ses)=>{if(ses)sbToken=ses.access_token});return true}
 const level=()=>1+Math.floor(prof.xp/1000);
 let load=JSON.parse(localStorage.getItem('hzw_load')||'null')||{w:0,helmet:false,armor:false,gren:false,med:true};
 function loadCost(l){return WEAP[l.w].p+['helmet','armor','gren','med'].reduce((a,k)=>a+(l[k]?GEAR[k].p:0),0)}
@@ -289,12 +300,13 @@ let NET=null;
 function netA(m){if(NET&&NET.ws.readyState==1)NET.ws.send(JSON.stringify(m))}
 function netBegin(){const ws=new WebSocket(SERVER);NET={ws,zc:null,names:[],last:0};units=null;me=null;bullets=[];nades=[];booms=[];tanks=[];feed=[];score=[0,0,0];tick=0;startCash=prof.cash;
  $('lobby').style.display='none';log('Connecting to server...');
- ws.onopen=()=>netA({join:{name:prof.name,team:myTeam,cash:prof.cash,load}});
+ ws.onopen=async()=>{let token=null;if(who==='sb'&&SB){const {data}=await SB.auth.getSession();token=data.session&&data.session.access_token}netA({join:{name:prof.name,team:myTeam,cash:prof.cash,load,token}})};
  ws.onerror=()=>{};
  ws.onclose=()=>{if(NET&&NET.ws===ws&&!NET.ended){NET=null;running=false;units=null;showLobby('<h2 style="color:#ff6b6b">Lost connection to the server</h2>')}};
  ws.onmessage=e=>{const m=JSON.parse(e.data);
+  if(m.authfail){NET=null;ws.close();who=null;startScreen('Your sign-in expired. Please sign in again.');return}
   if(m.full){NET=null;ws.close();showLobby('<h2>Server is full, try again soon</h2>');return}
-  if(m.you!=null){NET.you=m.you;CZ=m.CZ;bases=m.bases;HZ={x:CZ.x,y:CZ.y,r:200};running=true;log('Deployed. Head for the Control Zone!');return}
+  if(m.you!=null){NET.you=m.you;if(m.cash!=null)prof.cash=m.cash;CZ=m.CZ;bases=m.bases;HZ={x:CZ.x,y:CZ.y,r:200};running=true;log('Deployed. Head for the Control Zone!');return}
   if(m.end!=null){NET.ended=true;netEnd(m);return}
   netSnap(m)}}
 function netSnap(m){tick=m.tk;score=m.sc;NET.zc=m.zc;HZ={x:m.hz[0],y:m.hz[1],r:m.hz[2]};if(m.names)NET.names=m.names;
@@ -312,11 +324,12 @@ function netStep(){feed.forEach(f=>f.l--);feed=feed.filter(f=>f.l>0);const now=p
  let dx=(keys.d?1:0)-(keys.a?1:0)+joy.L.x,dy=(keys.s?1:0)-(keys.w?1:0)+joy.L.y,ang=me.ang,fire=false;
  if(joy.R.on){if(Math.hypot(joy.R.x,joy.R.y)>.2)ang=Math.atan2(joy.R.y,joy.R.x);fire=Math.hypot(joy.R.x,joy.R.y)>.55}else if(!isTouch)ang=Math.atan2(mouse.y-H/2,mouse.x-W/2);if(mouse.down&&!isTouch)fire=true;
  me.ang=ang;netA({i:[dx,dy,keys.shift||joy.sprint?1:0,Math.round(ang*1000)/1000,fire?1:0,keys.f?1:0]})}
-function netEnd(m){const w=m.end,won=w==me.t,s=m.me||{};running=false;prof.cash=s.cash!=null?s.cash+(won?500:0):prof.cash;
+function netEnd(m){const w=m.end,won=w==me.t,s=m.me||{};running=false;prof.cash=s.cash!=null?s.cash:prof.cash; // server already added the win bonus
+
  prof.matches++;prof.wins+=won?1:0;prof.kills+=s.k||0;prof.deaths+=s.d||0;prof.revives+=s.r||0;prof.xp+=(s.k||0)*50+(s.r||0)*80+(won?500:150);
  prof.history.unshift({d:new Date().toLocaleDateString(),won,team:TEAMS[w].n,k:s.k||0,dth:s.d||0,r:s.r||0,e:(s.e||0)+(won?500:0)});prof.history=prof.history.slice(0,10);save();
  const bd=`<div class="row">${TEAMS.map((t,i)=>`<div style="flex:1;min-width:240px"><h3 style="color:${t.c}">${t.n} — ${m.score[i]} pts</h3><table><tr><th>Name</th><th>K</th><th>D</th><th>Rev</th></tr>${m.board.filter(r=>r[0]==i).sort((a,b)=>b[2]-a[2]).map(r=>`<tr><td>${r[5]?'':'<b>'}${r[1]}${r[5]?' 🤖':'</b>'}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</table></div>`).join('')}</div>`;
  try{NET.ws.close()}catch{}NET=null;units=null;me=null;$('shopOv').style.display='none';$('board').style.display='none';
  showLobby(`<h2 style="color:${TEAMS[w].c}">${TEAMS[w].n} wins! ${won?'You won (+$500 bonus)':''}</h2>${bd}`)}
-startScreen();loop();
+sbInit().then(ok=>ok?showLobby():startScreen()).catch(()=>startScreen());loop();
 </script></body></html>
