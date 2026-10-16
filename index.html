@@ -24,6 +24,20 @@ input{font-size:16px;padding:6px 10px;border-radius:6px;border:0}.row{display:fl
 .tb.act{background:#f5a623;color:#000}
 @media (max-width:900px),(max-height:500px){#hud{min-width:0;width:46vw;padding:6px 10px;font-size:11px;bottom:6px}#hud .chip{font-size:10px;padding:1px 5px}.hrow{gap:5px;flex-wrap:wrap}
  #zb{width:60vw}#squad{display:none}#feed{font-size:11px;top:52px}.shop{grid-template-columns:repeat(2,1fr)}.panel{padding:12px 14px}#top .s{font-size:15px}}
+
+/* brutal meme menu look */
+#lobby{background:linear-gradient(#000a,#000c),url(assets/bg.jpg) center/cover no-repeat #1b1f17}
+#lobby .panel{background:#f2e6c9;color:#111;border:5px solid #000;border-radius:0;box-shadow:12px 12px 0 #000}
+#lobby .panel .muted{opacity:.75}#lobby .panel a{color:#c0392b!important;font-weight:bold}
+#lobby .logo{display:block;max-width:min(360px,80%);margin:0 auto;border:5px solid #000;box-shadow:8px 8px 0 #000;transform:rotate(-2deg);background:#fff}
+#lobby .title{text-align:center;font-family:Impact,'Arial Black',sans-serif;font-size:56px;letter-spacing:2px;color:#ffd60a;-webkit-text-stroke:3px #000;text-shadow:5px 5px 0 #000;margin:14px 0 0;text-transform:uppercase}
+#lobby .tag{text-align:center;font-family:'Comic Sans MS','Comic Neue',cursive;color:#c0392b;font-weight:bold;transform:rotate(-1deg);margin-bottom:12px}
+#lobby button{border:4px solid #000;border-radius:0;box-shadow:5px 5px 0 #000;font-family:Impact,'Arial Black',sans-serif;letter-spacing:1px;text-transform:uppercase}
+#lobby button:active{transform:translate(4px,4px);box-shadow:1px 1px 0 #000}
+#lobby input{border:3px solid #000;border-radius:0}
+#lobby .item{background:#fff;color:#111;border:3px solid #000;border-radius:0}#lobby .item.sel{background:#ffd60a;box-shadow:4px 4px 0 #000}
+#lobby .price{color:#b8860b}#lobby td,#lobby th{border-bottom:2px solid #0003}
+@media (max-width:900px){#lobby .title{font-size:38px}}
 </style></head><body>
 <canvas id="c"></canvas><div id="top"></div><div id="feed"></div><div id="squad" style="position:fixed;top:210px;right:12px;width:190px;font-size:12px;background:#0007;border-radius:8px;padding:6px 8px;line-height:1.5"></div><div id="info"></div><div id="hud"></div>
 <div id="touch"><div class="stick" id="sL"><i></i></div><div class="stick" id="sR"><i></i></div>
@@ -49,8 +63,9 @@ const newProf=n=>({name:n||'Player',cash:1500,xp:0,matches:0,wins:0,kills:0,deat
 let accts=JSON.parse(localStorage.getItem('hzw_accts')||'{}'),who=null,prof=newProf();
 function hsh(t){let h=5381;for(const ch of t)h=((h<<5)+h+ch.charCodeAt(0))|0;return 'h'+(h>>>0).toString(36)}
 function save(){if(!who)return;accts[who].prof=prof;localStorage.setItem('hzw_accts',JSON.stringify(accts))}
+const LOGO='<img class="logo" src="assets/logo.png" alt="WarDOGE"><h1 class="title">WarDOGE</h1><div class="tag">much war. very hot zone. wow.</div>';
 function startScreen(err){$('lobby').style.display='flex';const v=id=>($(id)||{}).value||'';
- $('lobbyP').innerHTML=`<h1>WarDOGE</h1><div class="row" style="align-items:flex-start">
+ $('lobbyP').innerHTML=`${LOGO}<div class="row" style="align-items:flex-start">
  <div style="flex:1;min-width:260px"><h3>Quick play</h3><input id="gname" placeholder="Your name" maxlength="14"><br><button onclick="guest()">Play as guest</button><div class="muted" style="margin-top:6px">Guests start with $1,500 every time and nothing is saved.</div></div>
  <div style="flex:1;min-width:260px"><h3>Log in to save progress</h3><input id="lu" placeholder="Username" maxlength="14"><br><input id="lp" type="password" placeholder="Password" style="margin-top:6px"><br>
  <button onclick="login(false)">Log in</button> <button onclick="login(true)" style="background:#888">Create account</button>
@@ -174,7 +189,7 @@ function shopHTML(){const cost=loadCost(load);
 function redraw(){localStorage.setItem('hzw_load',JSON.stringify(load));if($('lobby').style.display=='flex')showLobby(lobbyTop);else renderShop()}
 let lobbyTop='';
 function showLobby(top){lobbyTop=top||'';$('lobby').style.display='flex';
- $('lobbyP').innerHTML=`${lobbyTop}<img src="assets/logo.png" alt="WarDOGE" style="display:block;max-width:min(420px,90%);margin:0 auto 6px;border-radius:14px"><h1 style="text-align:center">WarDOGE</h1><div class="row"><div>${who?`Logged in as <b>${prof.name}</b> <a href="#" onclick="logout();return false" style="color:#ffd166">Log out</a>`:`Guest <b>${prof.name}</b> <span class="muted">(progress not saved)</span> <a href="#" onclick="startScreen();return false" style="color:#ffd166">Log in</a>`}</div>
+ $('lobbyP').innerHTML=`${lobbyTop}${LOGO}<div class="row"><div>${who?`Logged in as <b>${prof.name}</b> <a href="#" onclick="logout();return false" style="color:#ffd166">Log out</a>`:`Guest <b>${prof.name}</b> <span class="muted">(progress not saved)</span> <a href="#" onclick="startScreen();return false" style="color:#ffd166">Log in</a>`}</div>
  <div>Level <b>${level()}</b> <span class="muted">(${prof.xp%1000}/1000 XP)</span></div><div>Cash <b class="price">$${prof.cash}</b></div><div>Matches ${prof.matches} &nbsp; Wins ${prof.wins} &nbsp; Kills ${prof.kills} &nbsp; Revives ${prof.revives}</div></div>
  ${shopHTML()}<h3>Pick your team <span class="muted">(${PER} per team; bots fill empty slots, and each player who joins takes a bot's place)</span></h3><div class="shop">${TEAMS.map((t,i)=>`<div class="item ${myTeam==i?'sel':''}" style="border-color:${t.c}" onclick="myTeam=${i};localStorage.setItem('hzw_team',${i});redraw()"><b style="color:${t.c}">${t.n}</b><br><span class="muted">1 player, ${PER-1} bots</span></div>`).join('')}</div><button onclick="begin()">Deploy with ${TEAMS[myTeam].n}</button>
  <h3 style="margin-top:18px">Recent matches</h3>${prof.history.length?`<table><tr><th>Date</th><th>Result</th><th>Kills</th><th>Deaths</th><th>Revives</th><th>Earned</th></tr>${prof.history.map(h=>`<tr><td>${h.d}</td><td>${h.won?'Won':'Lost'} (${h.team} won)</td><td>${h.k}</td><td>${h.dth}</td><td>${h.r}</td><td>$${h.e}</td></tr>`).join('')}</table>`:'<div class="muted">No matches yet.</div>'}
