@@ -51,12 +51,12 @@ function unitData(S,u){return [r1(u.x),r1(u.y),Math.round(u.ang*100)/100,Math.ce
 setInterval(()=>{for(const r of rooms){const S=r.S;if(!S.running)continue;const feed=S.drainFeed(),zc=S.zoneCount();
  const tanks=S.tanks.map(k=>[r1(k.x),r1(k.y),Math.round(k.ang*100)/100,Math.ceil(k.hp),k.dead,k.driver?k.driver.id:-1]);
  const bullets=S.bullets.map(b=>[r1(b.x),r1(b.y),b.r,b.boom?1:0,r1(b.vx),r1(b.vy)]),nades=S.nades.map(n=>[r1(n.x),r1(n.y),n.t]),booms=S.booms.map(b=>[r1(b.x),r1(b.y),b.r,b.l]);
- const names=S.units.map(u=>u.name);const wallsJ=S.wallVer!==r.lastWallVer?S.walls.map(w=>[r1(w.x),r1(w.y),r1(w.w),r1(w.h),w.built==null?-1:w.built]):null;
+ const names=S.units.map(u=>u.name);const wallsJ=S.wallVer!==r.lastWallVer?S.walls.map(w=>[r1(w.x),r1(w.y),r1(w.w),r1(w.h),w.built==null?-1:w.built,w.k||0]):null;
  for(const c of wss.clients){const me=c.u;if(!me||c.room!==r||c.readyState!==1)continue;
   // fog of war on the server: enemies are only sent when this player can actually see them
   const us=[];for(const u of S.units){if(u.t!=me.t){if(me.dead||u.dead||S.d2(u,me)>S.VIS||!S.seeL(me,u))continue}us.push(unitData(S,u))}
   const msg={tk:S.tick,sc:S.score,zc,hz:[r1(S.HZ.x),r1(S.HZ.y),S.HZ.r],u:us,tn:tanks,b:bullets,n:nades,x:booms,f:feed,pl:me.pl,cash:me.cash,k:me.kills,dth:me.deaths,rv:me.revs,er:me.earned,td:me.tending?me.tending.id:-1};
-  if(c.wv!==S.wallVer){msg.w=wallsJ||S.walls.map(w=>[r1(w.x),r1(w.y),r1(w.w),r1(w.h),w.built==null?-1:w.built]);c.wv=S.wallVer;msg.names=names}
+  if(c.dm!==S.decor){c.dm=S.decor;msg.dc=S.decor.map(d=>[d.t,r1(d.x),r1(d.y),r1(d.r),d.c||0])}if(c.wv!==S.wallVer){msg.w=wallsJ||S.walls.map(w=>[r1(w.x),r1(w.y),r1(w.w),r1(w.h),w.built==null?-1:w.built,w.k||0]);c.wv=S.wallVer;msg.names=names}
   if(c.nv!==S.tick>>8){c.nv=S.tick>>8;msg.names=names}
   me.pl=[];c.send(JSON.stringify(msg))}r.lastWallVer=S.wallVer}},50);
 srv.listen(PORT,()=>console.log('WarDOGE server on :'+PORT));

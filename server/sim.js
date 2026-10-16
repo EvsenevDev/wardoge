@@ -10,7 +10,7 @@ const WEAP=[{n:'Rifle',p:0,cd:17,dmg:15,sp:5.6,k:1,spr:.04,life:106,r:3,rng:450}
 const GEAR={helmet:{n:'Helmet',p:150,d:'Takes 20% less damage'},armor:{n:'Body armor',p:250,d:'Absorbs 60% of damage until its 100 points run out'},gren:{n:'Grenades x3',p:120,d:'G to throw where you aim'},med:{n:'Medkits x3',p:90,d:'H heals you, F heals a teammate'}};
 // ---------- account (saved in this browser) ----------
 let rnd;function seed(s){rnd=()=>(s=(s*16807)%2147483647)/2147483647}
-let walls,grid,units,tanks,bullets,nades,booms,score,keys={},mouse={x:0,y:0,down:false},me,running=false,tick=0,feed=[],CZ,HZ,bases,startCash;
+let walls,grid,units,tanks,bullets,nades,booms,score,keys={},mouse={x:0,y:0,down:false},me,running=false,tick=0,feed=[],CZ,HZ,bases,startCash,decor=[];
 const GS=300;const gk=(x,y)=>(x/GS|0)+','+(y/GS|0);
 var addWall=function(w){walls.push(w);for(let x=w.x/GS|0;x<=(w.x+w.w)/GS|0;x++)for(let y=w.y/GS|0;y<=(w.y+w.h)/GS|0;y++){const k=x+','+y;(grid[k]=grid[k]||[]).push(w)}}
 var delWall=function(w){walls=walls.filter(v=>v!==w);for(let x=w.x/GS|0;x<=(w.x+w.w)/GS|0;x++)for(let y=w.y/GS|0;y<=(w.y+w.h)/GS|0;y++){const k=x+','+y;if(grid[k])grid[k]=grid[k].filter(v=>v!==w)}}
@@ -23,6 +23,13 @@ function makeMap(){walls=[];grid={};seed(Math.floor(Math.random()*1e9));
  for(let i=0;i<170;i++){const x=100+rnd()*(MW-400),y=100+rnd()*(MH-400);if(bases.some(b=>Math.hypot(b.x-x,b.y-y)<420))continue;
   if(rnd()<.45){const w=120+rnd()*180,h=120+rnd()*180,t=22;addWall({x,y,w,h:t});addWall({x,y:y+h,w:w*.4,h:t});addWall({x:x+w*.65,y:y+h,w:w*.35+t,h:t});addWall({x,y,w:t,h});addWall({x:x+w,y,w:t,h:h*.5})}
   else if(rnd()<.5)addWall({x,y,w:40+rnd()*260,h:30});else addWall({x,y,w:30,h:40+rnd()*260})}
+ decor=[];const free=(x,y,r)=>x>150&&y>150&&x<MW-150&&y<MH-150&&!bases.some(b=>Math.hypot(b.x-x,b.y-y)<480)&&!hitWall(x,y,r);
+ for(let i=0;i<85;i++){const x=rnd()*MW,y=rnd()*MH,n=1+(rnd()*3|0);for(let j=0;j<n;j++){const s=46+rnd()*20,cx=x+j*(s+4)*(rnd()<.5?1:0),cy=y+j*(s+4)*(rnd()<.5?1:0);if(free(cx+s/2,cy+s/2,s))addWall({x:cx,y:cy,w:s,h:s,hp:140,k:1})}}
+ for(let i=0;i<70;i++){const x=rnd()*MW,y=rnd()*MH,w=60+rnd()*90,h=50+rnd()*80;if(free(x+w/2,y+h/2,Math.max(w,h)/2+10))addWall({x,y,w,h,k:2})}
+ for(let i=0;i<30;i++){const cx=rnd()*MW,cy=rnd()*MH,a0=rnd()*6.28,R=90+rnd()*60;for(let j=0;j<4;j++){const a=a0+j*.42,x=cx+Math.cos(a)*R-28,y=cy+Math.sin(a)*R-12;if(free(x+28,y+12,30))addWall({x,y,w:56,h:24,hp:200,k:3})}}
+ for(let i=0;i<170;i++){const x=rnd()*MW,y=rnd()*MH;if(free(x+20,y+20,40))addWall({x,y,w:40,h:40,k:4})}
+ for(let i=0;i<110;i++){const x=rnd()*MW,y=rnd()*MH,r=55+rnd()*55;if(free(x,y,20))decor.push({t:'b',x,y,r})}
+ for(let i=0;i<160;i++)decor.push({t:'g',x:rnd()*MW,y:rnd()*MH,r:80+rnd()*260,c:rnd()<.5?0:1});
  tanks=[];for(let i=0;i<8;i++){let p;do p={x:400+rnd()*(MW-800),y:400+rnd()*(MH-800)};while(hitWall(p.x,p.y,40));tanks.push(mkTank(p.x,p.y))}}
 const mkTank=(x,y)=>({x,y,hp:500,ang:0,driver:null,dead:0});
 const BOTN0=['Rex','Ace','Bolt','Fang','Ghost','Hawk','Jinx','Kilo','Lynx','Moose','Nova','Ozzy','Pike','Rook','Scout','Tank','Viper','Wolf','Yeti','Zed','Bear','Duke','Echo','Flint'];
@@ -55,7 +62,8 @@ function explode(b){booms.push({x:b.x,y:b.y,r:b.boom,l:20});for(const u of units
  for(const k of tanks)if(!k.dead&&!k.driver&&d2(k,b)<b.boom)k.hp-=b.dmg*.5;
  for(const w of walls.slice())if(w.hp&&Math.hypot(w.x+w.w/2-b.x,w.y+w.h/2-b.y)<b.boom+40){w.hp-=b.dmg*2;if(w.hp<=0)delWall(w)}}
 function los(a,b){const n=Math.ceil(d2(a,b)/25);for(let i=1;i<n;i++)if(hitWall(a.x+(b.x-a.x)*i/n,a.y+(b.y-a.y)*i/n,2))return false;return true}
-function seeL(a,b){if(los(a,b))return true;const d=d2(a,b)||1,px=-(b.y-a.y)/d*12,py=(b.x-a.x)/d*12;return los(a,{x:b.x+px,y:b.y+py})||los(a,{x:b.x-px,y:b.y-py})||los({x:a.x+px,y:a.y+py},b)||los({x:a.x-px,y:a.y-py},b)}
+function inBush(u){if(!decor)return null;for(const b of decor)if(b.t=='b'&&Math.hypot(u.x-b.x,u.y-b.y)<b.r*.8)return b;return null}
+function seeL(a,b){const bb=inBush(b);if(bb&&bb!==inBush(a)&&d2(a,b)>140)return false;if(los(a,b))return true;const d=d2(a,b)||1,px=-(b.y-a.y)/d*12,py=(b.x-a.x)/d*12;return los(a,{x:b.x+px,y:b.y+py})||los(a,{x:b.x-px,y:b.y-py})||los({x:a.x+px,y:a.y+py},b)||los({x:a.x-px,y:a.y-py},b)}
 function tend(u){let best=null,bd=55;for(const o of units)if(o!==u&&o.t==u.t&&!o.dead&&(o.down||o.hp<100)){const d=d2(o,u);if(d<bd){bd=d;best=o}}
  if(!best){u.rev=0;return null}
  if(best.down){u.rev++;if(u.rev>=150){best.down=0;best.hp=35;best.revived=true;u.rev=0;u.revs++;pay(u,150,'teammate revived');if(best===me)log('You were revived! (only once per life)')}}
@@ -122,6 +130,6 @@ function action(u,m){if(!running)return;curU=u;try{
  }finally{curU=null}}
 module.exports={get units(){return units},get tanks(){return tanks},get bullets(){return bullets},get nades(){return nades},get booms(){return booms},
  get walls(){return walls},get score(){return score},get tick(){return tick},get CZ(){return CZ},get HZ(){return HZ},get bases(){return bases},
- get running(){return running},get winner(){return winner},get wallVer(){return wallVer},
+ get running(){return running},get winner(){return winner},get wallVer(){return wallVer},get decor(){return decor},
  newMatch,zoneCount:()=>zoneCount(),step:()=>{step()},action,buyFor,los,seeL,d2,VIS,PER,TEAMS,MW,MH,DOWNT,
  drainFeed(){const f=globalFeed;globalFeed=[];return f}};
