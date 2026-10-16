@@ -54,7 +54,7 @@ setInterval(()=>{for(const r of rooms){const S=r.S;if(!S.running)continue;const 
  const names=S.units.map(u=>u.name);const wallsJ=S.wallVer!==r.lastWallVer?S.walls.map(w=>[r1(w.x),r1(w.y),r1(w.w),r1(w.h),w.built==null?-1:w.built]):null;
  for(const c of wss.clients){const me=c.u;if(!me||c.room!==r||c.readyState!==1)continue;
   // fog of war on the server: enemies are only sent when this player can actually see them
-  const us=[];for(const u of S.units){if(u.t!=me.t){if(me.dead||u.dead||S.d2(u,me)>S.VIS||!S.los(me,u))continue}us.push(unitData(S,u))}
+  const us=[];for(const u of S.units){if(u.t!=me.t){if(me.dead||u.dead||S.d2(u,me)>S.VIS||!S.seeL(me,u))continue}us.push(unitData(S,u))}
   const msg={tk:S.tick,sc:S.score,zc,hz:[r1(S.HZ.x),r1(S.HZ.y),S.HZ.r],u:us,tn:tanks,b:bullets,n:nades,x:booms,f:feed,pl:me.pl,cash:me.cash,k:me.kills,dth:me.deaths,rv:me.revs,er:me.earned,td:me.tending?me.tending.id:-1};
   if(c.wv!==S.wallVer){msg.w=wallsJ||S.walls.map(w=>[r1(w.x),r1(w.y),r1(w.w),r1(w.h),w.built==null?-1:w.built]);c.wv=S.wallVer;msg.names=names}
   if(c.nv!==S.tick>>8){c.nv=S.tick>>8;msg.names=names}

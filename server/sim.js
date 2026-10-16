@@ -39,7 +39,7 @@ function build(u,ang){if(u.tank)return;const x=u.x+Math.cos(ang)*60,y=u.y+Math.s
  const nw={x:x-w/2,y:y-h/2,w,h,hp:250,built:u.t};if(units.some(o=>!o.dead&&o.x+16>nw.x&&o.x-16<nw.x+w&&o.y+16>nw.y&&o.y-16<nw.y+h))return;if(!spend(u,25)){log('Need $25 to build');return}addWall(nw)}
 function medkit(u){if(u.hp>=100||u.med<=0){if(u===me&&u.med<=0)log('No medkits left');return}u.med--;u.hp=Math.min(100,u.hp+60);if(u===me)log('Used a medkit')}
 function throwNade(u,tx,ty){if(u.gren<=0||u.tank){if(u===me)log('No grenades');return}u.gren--;const a=Math.atan2(ty-u.y,tx-u.x),d=Math.min(420,Math.hypot(tx-u.x,ty-u.y));nades.push({x:u.x,y:u.y,vx:Math.cos(a)*d/62,vy:Math.sin(a)*d/62,t:0,o:u})}
-function moveU(u,dx,dy,sprint){const k=u.tank;let sp=k?1.0:(sprint?1.7:1.15);const r=k?28:14;const d=Math.hypot(dx,dy);if(!d)return;dx=dx/d*sp;dy=dy/d*sp;
+function moveU(u,dx,dy,sprint){const k=u.tank;let sp=k?1.3:(sprint?2.3:1.6);const r=k?28:14;const d=Math.hypot(dx,dy);if(!d)return;dx=dx/d*sp;dy=dy/d*sp;
  const o=k||u;if(!hitWall(o.x+dx,o.y,r))o.x+=dx;if(!hitWall(o.x,o.y+dy,r))o.y+=dy;if(k){u.x=k.x;u.y=k.y;k.ang=Math.atan2(dy,dx)}}
 function shoot(u,ang){if(u.cd>0)return;
  if(u.tank){bullets.push({x:u.x+Math.cos(ang)*36,y:u.y+Math.sin(ang)*36,vx:Math.cos(ang)*4.8,vy:Math.sin(ang)*4.8,dmg:85,life:162,r:7,boom:120,o:u});u.cd=108;return}
@@ -55,6 +55,7 @@ function explode(b){booms.push({x:b.x,y:b.y,r:b.boom,l:20});for(const u of units
  for(const k of tanks)if(!k.dead&&!k.driver&&d2(k,b)<b.boom)k.hp-=b.dmg*.5;
  for(const w of walls.slice())if(w.hp&&Math.hypot(w.x+w.w/2-b.x,w.y+w.h/2-b.y)<b.boom+40){w.hp-=b.dmg*2;if(w.hp<=0)delWall(w)}}
 function los(a,b){const n=Math.ceil(d2(a,b)/25);for(let i=1;i<n;i++)if(hitWall(a.x+(b.x-a.x)*i/n,a.y+(b.y-a.y)*i/n,2))return false;return true}
+function seeL(a,b){if(los(a,b))return true;const d=d2(a,b)||1,px=-(b.y-a.y)/d*12,py=(b.x-a.x)/d*12;return los(a,{x:b.x+px,y:b.y+py})||los(a,{x:b.x-px,y:b.y-py})||los({x:a.x+px,y:a.y+py},b)||los({x:a.x-px,y:a.y-py},b)}
 function tend(u){let best=null,bd=55;for(const o of units)if(o!==u&&o.t==u.t&&!o.dead&&(o.down||o.hp<100)){const d=d2(o,u);if(d<bd){bd=d;best=o}}
  if(!best){u.rev=0;return null}
  if(best.down){u.rev++;if(u.rev>=150){best.down=0;best.hp=35;best.revived=true;u.rev=0;u.revs++;pay(u,150,'teammate revived');if(best===me)log('You were revived! (only once per life)')}}
@@ -122,5 +123,5 @@ function action(u,m){if(!running)return;curU=u;try{
 module.exports={get units(){return units},get tanks(){return tanks},get bullets(){return bullets},get nades(){return nades},get booms(){return booms},
  get walls(){return walls},get score(){return score},get tick(){return tick},get CZ(){return CZ},get HZ(){return HZ},get bases(){return bases},
  get running(){return running},get winner(){return winner},get wallVer(){return wallVer},
- newMatch,zoneCount:()=>zoneCount(),step:()=>{step()},action,buyFor,los,d2,VIS,PER,TEAMS,MW,MH,DOWNT,
+ newMatch,zoneCount:()=>zoneCount(),step:()=>{step()},action,buyFor,los,seeL,d2,VIS,PER,TEAMS,MW,MH,DOWNT,
  drainFeed(){const f=globalFeed;globalFeed=[];return f}};
