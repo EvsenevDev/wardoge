@@ -1,0 +1,12 @@
+# WarDOGE
+
+> WarDOGE is a free, open-source multiplayer browser game at https://wardoge.io. It is a top-down team shooter in the style of agar.io, with Doge-meme soldiers.
+
+## How it plays
+- Three teams (Red, Blue, Green), 15 slots each. Bots fill empty slots and real players replace them.
+- Capture and hold the Hot Zone in the middle of the map to score. Buy guns, armor, grenades and medkits between rounds.
+- Play as a guest or sign in with Google to save progress. No download; works on desktop and mobile browsers.
+
+## Links
+- Play: https://wardoge.io/
+- Source code (MIT): https://github.com/EvsenevDev/wardoge

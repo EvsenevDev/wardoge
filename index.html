@@ -1,4 +1,16 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>WarDOGE</title><link rel="icon" href="assets/logo.png">
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>WarDOGE: Free Online Multiplayer Doge Team Shooter</title>
+<meta name="description" content="WarDOGE is a free, open-source browser game: a top-down team shooter in the style of agar.io. Pick Red, Blue or Green, grab the Hot Zone and battle 15 vs 15 vs 15 Doge soldiers. No download.">
+<meta name="keywords" content="WarDOGE, doge game, io game, browser shooter, multiplayer game, free online game, agar.io style, team shooter, meme game, open source game">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://wardoge.io/">
+<meta name="theme-color" content="#1b1f17">
+<meta property="og:type" content="website"><meta property="og:site_name" content="WarDOGE"><meta property="og:url" content="https://wardoge.io/">
+<meta property="og:title" content="WarDOGE: Free Online Multiplayer Doge Team Shooter">
+<meta property="og:description" content="Pick a team, take the Hot Zone, win. A free open-source .io shooter in your browser.">
+<meta property="og:image" content="https://wardoge.io/assets/logo.png">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="WarDOGE: Free Online Multiplayer Doge Team Shooter"><meta name="twitter:description" content="Pick a team, take the Hot Zone, win. Free .io shooter in your browser."><meta name="twitter:image" content="https://wardoge.io/assets/logo.png">
+<link rel="apple-touch-icon" href="assets/logo.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"WarDOGE","url":"https://wardoge.io/","image":"https://wardoge.io/assets/logo.png","description":"Free, open-source top-down multiplayer team shooter in the browser, agar.io style. Three teams of 15 fight for the Hot Zone.","genre":["Shooter","Multiplayer","io game"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","playMode":"MultiPlayer","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"codeRepository":"https://github.com/EvsenevDev/wardoge","license":"https://opensource.org/licenses/MIT"}</script><link rel="icon" href="assets/logo.png">
 <style>html,body{margin:0;overflow:hidden;background:#1b1f17;font-family:sans-serif;color:#fff}canvas{display:block;cursor:crosshair}
 #top{position:fixed;top:8px;left:50%;transform:translateX(-50%);text-align:center;font-weight:bold;text-shadow:0 1px 3px #000}
 #top .s{font-size:20px;display:flex;gap:20px;justify-content:center}#top .t{font-size:13px;margin-top:3px}
@@ -38,7 +50,7 @@ input{font-size:16px;padding:6px 10px;border-radius:6px;border:0}.row{display:fl
 #lobby .item{background:#fff;color:#111;border:3px solid #000;border-radius:0}#lobby .item.sel{background:#ffd60a;box-shadow:4px 4px 0 #000}
 #lobby .price{color:#b8860b}#lobby td,#lobby th{border-bottom:2px solid #0003}
 @media (max-width:900px){#lobby .title{font-size:38px}}
-</style></head><body>
+</style></head><body><noscript><h1>WarDOGE: free online multiplayer Doge team shooter</h1><p>WarDOGE is a free, open-source top-down shooter you play in your browser, in the style of agar.io. Pick Red, Blue or Green, hold the Hot Zone, and win as a team of 15. Turn on JavaScript to play.</p></noscript>
 <canvas id="c"></canvas><div id="top"></div><div id="feed"></div><div id="squad" style="position:fixed;top:210px;right:12px;width:190px;font-size:12px;background:#0007;border-radius:8px;padding:6px 8px;line-height:1.5"></div><div id="info"></div><div id="hud"></div>
 <div id="touch"><div class="stick" id="sL"><i></i></div><div class="stick" id="sR"><i></i></div>
 <div class="tb" id="bG" style="right:170px;bottom:140px">Nade</div><div class="tb" id="bQ" style="right:236px;bottom:96px">Build</div>
@@ -299,11 +311,11 @@ if(isTouch){$('touch').classList.add('on');
 const SERVER=new URLSearchParams(location.search).get('server')||window.WARDOGE_SERVER||'';
 let NET=null;
 function netA(m){if(NET&&NET.ws.readyState==1)NET.ws.send(JSON.stringify(m))}
-function netBegin(){const ws=new WebSocket(SERVER);NET={ws,zc:null,names:[],last:0};units=null;me=null;bullets=[];nades=[];booms=[];tanks=[];feed=[];score=[0,0,0];tick=0;startCash=prof.cash;
+function netBegin(){const ws=new WebSocket(SERVER);const ct=setTimeout(()=>{if(ws.readyState!==1){try{ws.close()}catch(e){}if(NET&&NET.ws===ws){NET=null;running=false;units=null;showLobby('<h2 style="color:#ff6b6b">Server is waking up or unavailable. Try again in a few seconds.</h2>')}}},8000);ws.addEventListener('open',()=>clearTimeout(ct));NET={ws,zc:null,names:[],last:0};units=null;me=null;bullets=[];nades=[];booms=[];tanks=[];feed=[];score=[0,0,0];tick=0;startCash=prof.cash;
  $('lobby').style.display='none';log('Connecting to server...');
  ws.onopen=async()=>{let token=null;if(who==='sb'&&SB){const {data}=await SB.auth.getSession();token=data.session&&data.session.access_token}netA({join:{name:prof.name,team:myTeam,cash:prof.cash,load,token}})};
  ws.onerror=()=>{};
- ws.onclose=()=>{if(NET&&NET.ws===ws&&!NET.ended){NET=null;running=false;units=null;showLobby('<h2 style="color:#ff6b6b">Lost connection to the server</h2>')}};
+ ws.onclose=()=>{clearTimeout(ct);if(NET&&NET.ws===ws&&!NET.ended){NET=null;running=false;units=null;showLobby('<h2 style="color:#ff6b6b">Lost connection to the server</h2>')}};
  ws.onmessage=e=>{const m=JSON.parse(e.data);
   if(m.authfail){NET=null;ws.close();who=null;startScreen('Your sign-in expired. Please sign in again.');return}
   if(m.full){NET=null;ws.close();showLobby('<h2>Server is full, try again soon</h2>');return}

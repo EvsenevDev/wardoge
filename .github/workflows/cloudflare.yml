@@ -17,7 +17,7 @@ jobs:
           SUPABASE_ANON_KEY: '${{ vars.SUPABASE_ANON_KEY }}'
         run: |
           mkdir _site
-          cp -r index.html assets _site/
+          cp -r index.html assets robots.txt sitemap.xml llms.txt _site/
           echo "window.WARDOGE_SERVER=\"${WARDOGE_SERVER}\";window.WARDOGE_SUPABASE_URL=\"${SUPABASE_URL}\";window.WARDOGE_SUPABASE_ANON_KEY=\"${SUPABASE_ANON_KEY}\";" > _site/config.js
       - uses: cloudflare/wrangler-action@v3
         with:
